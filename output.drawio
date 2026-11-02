@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="Electron">
+  <diagram name="Page-1" id="Mt2xMCjWL6nFrCeWAPj2">
+    <mxGraphModel dx="1952" dy="1396" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="UaET0MLFw6GfnosGGGE4-9" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontSize=30;fontStyle=1" value="SNC25152" vertex="1">
+          <mxGeometry height="60" width="600" x="380" y="690" as="geometry" />
+        </mxCell>
+        <object label="id" point_type="UI" object_type="point" id="UI1">
+          <mxCell parent="1" style="ellipse;whiteSpace=wrap;html=1;shapeInside=1;aspect=fixed;" vertex="1">
+            <mxGeometry height="20" width="20" x="400" y="690" as="geometry" />
+          </mxCell>
+        </object>
+      <mxCell id="VDp9Cj3qi06iIqz_LAlK-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="AI_10K" vertex="1">
+          <mxGeometry height="60" width="120" x="330.0" y="460.0" as="geometry" />
+        </mxCell>
+        <object label="" type="interface" id="signal">
+          <mxCell parent="1" style="ellipse;whiteSpace=wrap;html=1;shapeInside=1;aspect=fixed;" vertex="1">
+            <mxGeometry height="20" width="20" x="330.0" y="460.0" as="geometry" />
+          </mxCell>
+        </object>
+      <mxCell id="edge1" edge="1" parent="1" source="signal" target="UI1" style="endArrow=none;html=1;strokeWidth=2;"><mxGeometry relative="1" as="geometry" /></mxCell></root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,56 @@
+device_template:
+
+  name: AI_420mA
+
+  description: 4-20mA Transmitter
+
+  category: transmitter
+
+  controller_point_types:
+    - UI
+
+  drawing:
+
+    symbol: PressureTransmitter
+
+    terminals:
+
+      positive:
+        label: +
+
+      signal:
+        label: SIG
+
+      common:
+        label: COM
+
+  wiring:
+
+    positive:
+
+      device_terminal: positive
+
+      controller_interface: sensor_supply
+
+    signal:
+
+      device_terminal: signal
+
+      controller_interface: signal
+
+    common:
+
+      device_terminal: common
+
+      controller_interface: common
+
+  labels:
+
+    - tag
+    - description
+
+  schedule:
+
+    type: Pressure Transmitter
+
+    units: Pa

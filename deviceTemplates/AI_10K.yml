@@ -1,0 +1,47 @@
+device_template:
+
+  name: AI_10K
+
+  description: 10K Type II Temperature Sensor
+
+  category: sensor
+
+  controller_point_types:
+    - UI
+
+  drawing:
+
+    symbol: TemperatureSensor
+
+    terminals:
+
+      signal:
+        label: SIG
+
+      common:
+        label: COM
+
+  wiring:
+
+    signal:
+
+      device_terminal: signal
+
+      controller_interface: signal
+
+    common:
+
+      device_terminal: common
+
+      controller_interface: common
+
+  labels:
+
+    - tag
+    - description
+
+  schedule:
+
+    type: Temperature Sensor
+
+    units: degC

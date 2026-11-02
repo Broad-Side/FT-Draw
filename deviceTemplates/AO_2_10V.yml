@@ -1,0 +1,34 @@
+device_template:
+
+  name: AO_2_10V
+
+  description: Modulating Actuator
+
+  category: actuator
+
+  controller_point_types:
+    - AO
+
+  drawing:
+
+    symbol: ModulatingActuator
+
+    terminals:
+
+      control:
+        label: Y
+
+      common:
+        label: G0
+
+  wiring:
+
+    control:
+      controller_interface: signal
+
+    common:
+      controller_interface: common
+
+  schedule:
+
+    type: 2-10V Actuator

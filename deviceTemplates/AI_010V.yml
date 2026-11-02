@@ -1,0 +1,40 @@
+device_template:
+
+  name: AI_010V
+
+  description: 0-10V Input Device
+
+  category: transmitter
+
+  controller_point_types:
+    - UI
+
+  drawing:
+
+    symbol: VoltageInput
+
+    terminals:
+
+      signal:
+        label: VOUT
+
+      common:
+        label: COM
+
+      power:
+        label: 24V
+
+  wiring:
+
+    signal:
+      controller_interface: signal
+
+    common:
+      controller_interface: common
+
+    power:
+      controller_interface: sensor_supply
+
+  schedule:
+
+    type: Voltage Input

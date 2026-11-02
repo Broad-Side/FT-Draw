@@ -1,0 +1,25 @@
+AHU01:
+
+  SAT:
+    template: AI_10K
+    point: UI1
+
+  RAT:
+    template: AI_10K
+    point: UI2
+
+  DAT:
+    template: AI_420mA
+    point: UI3
+
+  SF_STATUS:
+    template: BI_DryContact
+    point: BI1
+
+  SF_START:
+    template: BO_Triac
+    point: BO1
+
+  CHWV:
+    template: AO_010V
+    point: AO1

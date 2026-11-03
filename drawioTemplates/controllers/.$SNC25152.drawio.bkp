@@ -1,9 +1,51 @@
 <mxfile host="Electron">
-  <diagram name="Page-1" id="Mt2xMCjWL6nFrCeWAPj2">
-    <mxGraphModel dx="1347" dy="963" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+  <diagram name="Page-1" id="EdkTagjfyLpJvhSjJacu">
+    <mxGraphModel dx="949" dy="572" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="_ujJRwGDb5auRWLo8f43-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Courier New;" value="01" vertex="1">
+          <mxGeometry height="32" width="30" x="461" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="_ujJRwGDb5auRWLo8f43-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Courier New;" value="&lt;font&gt;UI1&lt;/font&gt;" vertex="1">
+          <mxGeometry height="32" width="60" x="384" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="_ujJRwGDb5auRWLo8f43-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Courier New;" value="02" vertex="1">
+          <mxGeometry height="32" width="30" x="461" y="142" as="geometry" />
+        </mxCell>
+        <mxCell id="_ujJRwGDb5auRWLo8f43-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Courier New;" value="&lt;font&gt;UI-C1/2&lt;/font&gt;" vertex="1">
+          <mxGeometry height="32" width="60" x="384" y="142" as="geometry" />
+        </mxCell>
+        <mxCell id="_ujJRwGDb5auRWLo8f43-5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Courier New;" value="&lt;font&gt;UI2&lt;/font&gt;" vertex="1">
+          <mxGeometry height="32" width="60" x="384" y="174" as="geometry" />
+        </mxCell>
+        <mxCell id="_ujJRwGDb5auRWLo8f43-6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontFamily=Courier New;" value="03" vertex="1">
+          <mxGeometry height="32" width="30" x="461" y="174" as="geometry" />
+        </mxCell>
+        <mxCell id="_ujJRwGDb5auRWLo8f43-7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;align=left;" value="Outside Air Temperature" vertex="1">
+          <mxGeometry height="32" width="207" x="160" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="_ujJRwGDb5auRWLo8f43-8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;align=left;" value="Common" vertex="1">
+          <mxGeometry height="32" width="207" x="160" y="142" as="geometry" />
+        </mxCell>
+        <mxCell id="_ujJRwGDb5auRWLo8f43-9" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;align=left;" value="Outside Air Temperature II" vertex="1">
+          <mxGeometry height="32" width="207" x="160" y="174" as="geometry" />
+        </mxCell>
+        <object label="" object_type="point" point_type="UI_COMMON" id="UI1_COMMON">
+          <mxCell parent="1" style="rounded=0;whiteSpace=wrap;html=1;points=[[1,0.25,1,0,0],[1,0.5,1,0,0],[1,0.75,1,0,0]];" vertex="1">
+            <mxGeometry height="32" width="20" x="506" y="142" as="geometry" />
+          </mxCell>
+        </object>
+        <object label="" object_type="point" point_type="UI" id="UI1">
+          <mxCell parent="1" style="rounded=0;whiteSpace=wrap;html=1;points=[[1,0.5,1,0,0]];" vertex="1">
+            <mxGeometry height="32" width="20" x="506" y="110" as="geometry" />
+          </mxCell>
+        </object>
+        <object label="" object_type="point" point_type="UI" id="UI2">
+          <mxCell parent="1" style="rounded=0;whiteSpace=wrap;html=1;points=[[1,0.5,1,0,0]];" vertex="1">
+            <mxGeometry height="32" width="20" x="506" y="174" as="geometry" />
+          </mxCell>
+        </object>
       </root>
     </mxGraphModel>
   </diagram>

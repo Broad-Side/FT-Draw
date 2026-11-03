@@ -6,39 +6,46 @@ device_template:
 
   category: sensor
 
-  controller_point_types:
+  compatible_point_types:
     - UI
 
   drawing:
 
     symbol: TemperatureSensor
 
-    terminals:
+    interfaces:
 
       signal:
+
+        id: signal
+
         label: SIG
 
+        interface_type: signal
+
       common:
+
+        id: common
+
         label: COM
 
-  wiring:
+        interface_type: common
+
+  connections:
 
     signal:
-
-      device_terminal: signal
 
       controller_interface: signal
 
     common:
 
-      device_terminal: common
-
       controller_interface: common
 
   labels:
 
-    - tag
-    - description
+    display:
+      - tag
+      - description
 
   schedule:
 

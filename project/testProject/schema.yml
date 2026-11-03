@@ -1,0 +1,8 @@
+      X4-005A:
+        number: 5
+        level: A
+        terminal_type: disconnect
+        conductor_role: signal
+        fused: false
+        linked_to: null
+        spare: false

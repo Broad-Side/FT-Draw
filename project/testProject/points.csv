@@ -1,0 +1,3 @@
+equipment,point_tag,description,device_template,controller_id,controller_point,destination_type,destination_ref,signal_terminal_mode,signal_terminal_id,signal_wire,signal_core,signal_destination_terminal,common_terminal_mode,common_terminal_id,common_wire,common_core,common_destination_terminal
+AHU01,OAT01,Outside Air Temperature,AI_10K,SNC01,UI1,field,OAT01,terminal,X4-001A,401A,TX4-1D,+,terminal,X4-002A,402A,TX4-2D,-
+AHU02,OAT02,Outside Air Temperature,AI_10K_Invert,SNC01,UI2,field,OAT02,terminal,X4-001A,401A,TX4-1D,+,terminal,X4-002A,402A,TX4-2D,-

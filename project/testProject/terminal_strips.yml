@@ -1,0 +1,31 @@
+terminal_strips:
+
+  X4:
+    description: Field I/O Terminal Strip
+    location: CE1
+
+    terminals:
+
+      X4-001A:
+        number: 1
+        level: A
+        terminal_type: feed_through
+        conductor_role: signal
+
+      X4-002A:
+        number: 2
+        level: A
+        terminal_type: feed_through
+        conductor_role: common
+
+      X4-003A:
+        number: 3
+        level: A
+        terminal_type: feed_through
+        conductor_role: signal
+
+      X4-004A:
+        number: 4
+        level: A
+        terminal_type: feed_through
+        conductor_role: common

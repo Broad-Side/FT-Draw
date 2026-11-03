@@ -3,257 +3,266 @@ controller:
   model: SNC25152
 
 points:
-
   UI1:
     point_type: UI
-    signal_terminal: 1
-    common_terminal: 2
+    interfaces:
+      signal:
+        drawio_id: UI1
+        terminal: 1
+      common:
+        drawio_id: UI1_COMMON
+        terminal: 2
 
   UI2:
     point_type: UI
-    signal_terminal: 3
-    common_terminal: 2
+    interfaces:
+      signal:
+        drawio_id: UI2
+        terminal: 1
+      common:
+        drawio_id: UI1_COMMON
+        terminal: 2
 
-  UI3:
-    point_type: UI
-    signal_terminal: 4
-    common_terminal: 5
+    UI3:
+      point_type: UI
+      signal_terminal: 4
+      common_terminal: 5
 
-  UI4:
-    point_type: UI
-    signal_terminal: 6
-    common_terminal: 5
+    UI4:
+      point_type: UI
+      signal_terminal: 6
+      common_terminal: 5
 
-  UI5:
-    point_type: UI
-    signal_terminal: 7
-    common_terminal: 8
+    UI5:
+      point_type: UI
+      signal_terminal: 7
+      common_terminal: 8
 
-  UI6:
-    point_type: UI
-    signal_terminal: 9
-    common_terminal: 8
+    UI6:
+      point_type: UI
+      signal_terminal: 9
+      common_terminal: 8
 
-  UI7:
-    point_type: UI
-    signal_terminal: 10
-    common_terminal: 11
-    sensor_supply:
-      positive_terminal: 12
+    UI7:
+      point_type: UI
+      signal_terminal: 10
+      common_terminal: 11
+      sensor_supply:
+        positive_terminal: 12
 
-  UI8:
-    point_type: UI
-    signal_terminal: 23
-    common_terminal: 22
+    UI8:
+      point_type: UI
+      signal_terminal: 23
+      common_terminal: 22
 
-  UI9:
-    point_type: UI
-    signal_terminal: 24
-    common_terminal: 22
+    UI9:
+      point_type: UI
+      signal_terminal: 24
+      common_terminal: 22
 
-  UI10:
-    point_type: UI
-    signal_terminal: 25
-    common_terminal: 26
+    UI10:
+      point_type: UI
+      signal_terminal: 25
+      common_terminal: 26
 
-  UI11:
-    point_type: UI
-    signal_terminal: 27
-    common_terminal: 26
+    UI11:
+      point_type: UI
+      signal_terminal: 27
+      common_terminal: 26
 
-  UI12:
-    point_type: UI
-    signal_terminal: 28
-    common_terminal: 29
+    UI12:
+      point_type: UI
+      signal_terminal: 28
+      common_terminal: 29
 
-  UI13:
-    point_type: UI
-    signal_terminal: 30
-    common_terminal: 29
+    UI13:
+      point_type: UI
+      signal_terminal: 30
+      common_terminal: 29
 
-  UI14:
-    point_type: UI
-    signal_terminal: 31
-    common_terminal: 32
-    sensor_supply:
-      positive_terminal: 33
+    UI14:
+      point_type: UI
+      signal_terminal: 31
+      common_terminal: 32
+      sensor_supply:
+        positive_terminal: 33
 
-  BI1:
-    point_type: BI
-    signal_terminal: 13
-    common_terminal: 14
+    BI1:
+      point_type: BI
+      signal_terminal: 13
+      common_terminal: 14
 
-  BI2:
-    point_type: BI
-    signal_terminal: 15
-    common_terminal: 14
+    BI2:
+      point_type: BI
+      signal_terminal: 15
+      common_terminal: 14
 
-  BI3:
-    point_type: BI
-    signal_terminal: 16
-    common_terminal: 17
+    BI3:
+      point_type: BI
+      signal_terminal: 16
+      common_terminal: 17
 
-  BI4:
-    point_type: BI
-    signal_terminal: 18
-    common_terminal: 17
+    BI4:
+      point_type: BI
+      signal_terminal: 18
+      common_terminal: 17
 
-  BI5:
-    point_type: BI
-    signal_terminal: 19
-    common_terminal: 20
+    BI5:
+      point_type: BI
+      signal_terminal: 19
+      common_terminal: 20
 
-  BI6:
-    point_type: BI
-    signal_terminal: 21
-    common_terminal: 20
+    BI6:
+      point_type: BI
+      signal_terminal: 21
+      common_terminal: 20
 
-  BI7:
-    point_type: BI
-    signal_terminal: 34
-    common_terminal: 35
+    BI7:
+      point_type: BI
+      signal_terminal: 34
+      common_terminal: 35
 
-  BI8:
-    point_type: BI
-    signal_terminal: 36
-    common_terminal: 35
+    BI8:
+      point_type: BI
+      signal_terminal: 36
+      common_terminal: 35
 
-  BI9:
-    point_type: BI
-    signal_terminal: 37
-    common_terminal: 38
+    BI9:
+      point_type: BI
+      signal_terminal: 37
+      common_terminal: 38
 
-  BI10:
-    point_type: BI
-    signal_terminal: 39
-    common_terminal: 38
+    BI10:
+      point_type: BI
+      signal_terminal: 39
+      common_terminal: 38
 
-  BI11:
-    point_type: BI
-    signal_terminal: 40
-    common_terminal: 41
+    BI11:
+      point_type: BI
+      signal_terminal: 40
+      common_terminal: 41
 
-  BO1:
-    point_type: BO
-    signal_terminal: 1
-    common_terminal: 2
+    BO1:
+      point_type: BO
+      signal_terminal: 1
+      common_terminal: 2
 
-  BO2:
-    point_type: BO
-    signal_terminal: 3
-    common_terminal: 4
+    BO2:
+      point_type: BO
+      signal_terminal: 3
+      common_terminal: 4
 
-  BO3:
-    point_type: BO
-    signal_terminal: 5
-    common_terminal: 6
+    BO3:
+      point_type: BO
+      signal_terminal: 5
+      common_terminal: 6
 
-  BO4:
-    point_type: BO
-    signal_terminal: 7
-    common_terminal: 8
+    BO4:
+      point_type: BO
+      signal_terminal: 7
+      common_terminal: 8
 
-  BO5:
-    point_type: BO
-    signal_terminal: 9
-    common_terminal: 10
+    BO5:
+      point_type: BO
+      signal_terminal: 9
+      common_terminal: 10
 
-  BO6:
-    point_type: BO
-    signal_terminal: 11
-    common_terminal: 12
+    BO6:
+      point_type: BO
+      signal_terminal: 11
+      common_terminal: 12
 
-  BO7:
-    point_type: BO
-    signal_terminal: 13
-    common_terminal: 14
+    BO7:
+      point_type: BO
+      signal_terminal: 13
+      common_terminal: 14
 
-  CO1:
-    point_type: CO
+    CO1:
+      point_type: CO
 
-    output_terminal: 15
-    output_common_terminal: 16
+      output_terminal: 15
+      output_common_terminal: 16
 
-    supply_common_terminal: 19
-    supply_terminal: 20
+      supply_common_terminal: 19
+      supply_terminal: 20
 
-  CO2:
-    point_type: CO
+    CO2:
+      point_type: CO
 
-    output_terminal: 17
-    output_common_terminal: 18
+      output_terminal: 17
+      output_common_terminal: 18
 
-    supply_common_terminal: 19
-    supply_terminal: 20
+      supply_common_terminal: 19
+      supply_terminal: 20
 
-  CO3:
-    point_type: CO
+    CO3:
+      point_type: CO
 
-    output_terminal: 21
-    output_common_terminal: 22
+      output_terminal: 21
+      output_common_terminal: 22
 
-    supply_common_terminal: 25
-    supply_terminal: 26
+      supply_common_terminal: 25
+      supply_terminal: 26
 
-  CO4:
-    point_type: CO
+    CO4:
+      point_type: CO
 
-    output_terminal: 23
-    output_common_terminal: 24
+      output_terminal: 23
+      output_common_terminal: 24
 
-    supply_common_terminal: 25
-    supply_terminal: 26
+      supply_common_terminal: 25
+      supply_terminal: 26
 
-  AO1:
-    point_type: AO
-    signal_terminal: 27
-    common_terminal: 28
+    AO1:
+      point_type: AO
+      signal_terminal: 27
+      common_terminal: 28
 
-  AO2:
-    point_type: AO
-    signal_terminal: 29
-    common_terminal: 28
+    AO2:
+      point_type: AO
+      signal_terminal: 29
+      common_terminal: 28
 
-  AO3:
-    point_type: AO
-    signal_terminal: 30
-    common_terminal: 31
+    AO3:
+      point_type: AO
+      signal_terminal: 30
+      common_terminal: 31
 
-  AO4:
-    point_type: AO
-    signal_terminal: 32
-    common_terminal: 31
+    AO4:
+      point_type: AO
+      signal_terminal: 32
+      common_terminal: 31
 
-networks:
+  networks:
 
-  sa_bus:
+    sa_bus:
 
-    power_terminal: 1
-    common_terminal: 2
-    shield_terminal: 3
-    data_terminal: 4
+      power_terminal: 1
+      common_terminal: 2
+      shield_terminal: 3
+      data_terminal: 4
 
-capabilities:
+  capabilities:
 
-  UI:
-    - thermistor_10k
-    - thermistor_1k
-    - rtd
-    - dry_contact
-    - voltage_0_10v
-    - current_4_20ma
+    UI:
+      - thermistor_10k
+      - thermistor_1k
+      - rtd
+      - dry_contact
+      - voltage_0_10v
+      - current_4_20ma
 
-  BI:
-    - dry_contact
-    - pulse_counter
+    BI:
+      - dry_contact
+      - pulse_counter
 
-  AO:
-    - voltage_0_10v
-    - current_4_20ma
+    AO:
+      - voltage_0_10v
+      - current_4_20ma
 
-  BO:
-    - triac
+    BO:
+      - triac
 
-  CO:
-    - triac
-    - voltage_0_10v
+    CO:
+      - triac
+      - voltage_0_10v

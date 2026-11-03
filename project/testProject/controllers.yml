@@ -1,0 +1,6 @@
+controllers:
+
+  SNC01:
+    template: SNC25152
+    description: CE1 BAS Controller
+    panel: CE1

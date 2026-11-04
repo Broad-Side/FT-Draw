@@ -1,21 +1,26 @@
 <mxfile host="Electron">
   <diagram name="Page-1" id="-lOCp7c1RY4N1GiOF-6k">
-    <mxGraphModel dx="789" dy="476" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1333" dy="949" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <object label="" id="AI_10K_Invert">
+          <mxCell connectable="0" parent="1" style="group" vertex="1">
+            <mxGeometry height="40" width="150" x="650" y="290" as="geometry" />
+          </mxCell>
+        </object>
         <object label="+" interface_type="signal" object_type="interface" id="signal">
-          <mxCell parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;points=[[0,0.5,1,0,0]];" vertex="1">
-            <mxGeometry height="20" width="30" x="650" y="310" as="geometry" />
+          <mxCell parent="AI_10K_Invert" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;points=[[0,0.5,1,0,0]];" vertex="1">
+            <mxGeometry height="20" width="30" y="20" as="geometry" />
           </mxCell>
         </object>
         <object label="-" interface_type="common" object_type="interface" id="common">
-          <mxCell parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;points=[[0,0.5,1,0,0]];" vertex="1">
-            <mxGeometry height="20" width="30" x="650" y="290" as="geometry" />
+          <mxCell parent="AI_10K_Invert" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;points=[[0,0.5,1,0,0]];" vertex="1">
+            <mxGeometry height="20" width="30" as="geometry" />
           </mxCell>
         </object>
-        <mxCell id="oa9BmNb3sHS4Cweoy2ly-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;font-family: &amp;quot;Courier New&amp;quot;;&quot;&gt;AI_10K&lt;/span&gt;" vertex="1">
-          <mxGeometry height="40" width="120" x="680" y="290" as="geometry" />
+        <mxCell id="oa9BmNb3sHS4Cweoy2ly-4" parent="AI_10K_Invert" style="rounded=0;whiteSpace=wrap;html=1;points=[];" value="&lt;span style=&quot;font-family: &amp;quot;Courier New&amp;quot;;&quot;&gt;AI_10K&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="120" x="30" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

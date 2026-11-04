@@ -23,70 +23,157 @@ points:
         drawio_id: UI1_COMMON
         terminal: 2
 
-    UI3:
-      point_type: UI
-      signal_terminal: 4
-      common_terminal: 5
+  UI3:
+    point_type: UI
+    interfaces:
+      signal:
+        drawio_id: UI3
+        terminal: 4
+      common:
+        drawio_id: UI3_COMMON
+        terminal: 6
 
-    UI4:
-      point_type: UI
-      signal_terminal: 6
-      common_terminal: 5
+  UI4:
+    point_type: UI
+    interfaces:
+      signal:
+        drawio_id: UI4
+        terminal: 6
+      common:
+        drawio_id: UI3_COMMON
+        terminal: 5
 
-    UI5:
-      point_type: UI
-      signal_terminal: 7
-      common_terminal: 8
+  UI5:
+    point_type: UI
+    interfaces:
+      signal:
+        drawio_id: UI5
+        terminal: 7
+      common:
+        drawio_id: UI5_COMMON
+        terminal: 8
 
-    UI6:
-      point_type: UI
-      signal_terminal: 9
-      common_terminal: 8
+  UI6:
+    point_type: UI
+    interfaces:
+      signal:
+        drawio_id: UI6
+        terminal: 9 
+      common:
+        drawio_id: UI5_COMMON
+        terminal: 8
 
-    UI7:
-      point_type: UI
-      signal_terminal: 10
-      common_terminal: 11
-      sensor_supply:
-        positive_terminal: 12
+  UI7:
+    point_type: UI
+    interfaces:
+      signal:
+        drawio_id: UI7
+        terminal: 10
+      common:
+        drawio_id: UI7_COMMON
+        terminal: 8
 
-    UI8:
-      point_type: UI
-      signal_terminal: 23
-      common_terminal: 22
+  12(+15v):
+    point_type: +
+    interfaces:
+      signal:
+        drawio_id: UI12(+15v)
+        terminal: 12
+      common:
+        drawio_id: UI7_COMMON
+        terminal: 8
 
-    UI9:
-      point_type: UI
-      signal_terminal: 24
-      common_terminal: 22
+  UI8:
+    point_type: UI
+    interfaces:
+      signal:
+        drawio_id: UI8
+        terminal: 22
+      common:
+        drawio_id: UI8_COMMON
+        terminal: 23
 
-    UI10:
-      point_type: UI
-      signal_terminal: 25
-      common_terminal: 26
+  UI9:
+    point_type: UI
+    interfaces:
+      signal:
+        drawio_id: UI9
+        terminal: 24
+      common:
+        drawio_id: UI8_COMMON
+        terminal: 23
 
-    UI11:
-      point_type: UI
-      signal_terminal: 27
-      common_terminal: 26
+  UI10:
+    point_type: UI
+    interfaces:
+      signal:
+        drawio_id: UI10
+        terminal: 25
+      common:
+        drawio_id: UI10_COMMON
+        terminal: 26
 
-    UI12:
-      point_type: UI
-      signal_terminal: 28
-      common_terminal: 29
+  UI11:
+    point_type: UI
+    interfaces:
+      signal:
+        drawio_id: UI11
+        terminal: 27
+      common:
+        drawio_id: UI10_COMMON
+        terminal: 26
 
-    UI13:
-      point_type: UI
-      signal_terminal: 30
-      common_terminal: 29
+  UI12:
+    point_type: UI
+    interfaces:
+      signal:
+        drawio_id: UI12
+        terminal: 28
+      common:
+        drawio_id: UI12_COMMON
+        terminal: 29
 
-    UI14:
-      point_type: UI
-      signal_terminal: 31
-      common_terminal: 32
-      sensor_supply:
-        positive_terminal: 33
+  UI13:
+    point_type: UI
+    interfaces:
+      signal:
+        drawio_id: UI13
+        terminal: 30
+      common:
+        drawio_id: UI12_COMMON
+        terminal: 29
 
+  UI14:
+    point_type: UI
+    interfaces:
+      signal:
+        drawio_id: UI14
+        terminal: 31
+      common:
+        drawio_id: UI14_COMMON
+        terminal: 32
+
+
+  UI13:
+    point_type: UI
+    interfaces:
+      signal:
+        drawio_id: UI13
+        terminal: 27
+      common:
+        drawio_id: UI12_COMMON
+        terminal: 26
+
+  33(+15v):
+    point_type: +
+    interfaces:
+      signal:
+        drawio_id: UI12(+15v)
+        terminal: 33
+      common:
+        drawio_id: UI12_COMMON
+        terminal: 32
+ 
     BI1:
       point_type: BI
       signal_terminal: 13

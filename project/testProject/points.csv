@@ -1,3 +1,15 @@
 equipment,point_tag,description,device_template,controller_id,controller_point,destination_type,destination_ref,signal_terminal_mode,signal_terminal_id,signal_wire,signal_core,signal_destination_terminal,common_terminal_mode,common_terminal_id,common_wire,common_core,common_destination_terminal
-AHU01,OAT01,Outside Air Temperature,AI_10K,SNC01,UI1,field,OAT01,terminal,X4-001A,401A,TX4-1D,+,terminal,X4-002A,402A,TX4-2D,-
-AHU02,OAT02,Outside Air Temperature,AI_10K_Invert,SNC01,UI2,field,OAT02,terminal,X4-001A,401A,TX4-1D,+,terminal,X4-002A,402A,TX4-2D,-
+AHU01,OAT01,Outside Air Temperature,AI_10K,SNC01,UI1,field,OAT01,terminal,X4-001,401A,401D,+,terminal,X4-001,401B,401C,-
+AHU02,OAT02,Outside Air Temperature,AI_10K_Invert,SNC01,UI2,field,OAT02,terminal,X4-002,402A,402D,+,terminal,X4-002,402B,402C,-
+AHU03,OAT03,Outside Air Temperature,AI_10K,SNC01,UI3,field,OAT03,terminal,X4-003,403A,403D,+,terminal,X4-003,403B,403C,-
+AHU04,OAT04,Outside Air Temperature,AI_10K_Invert,SNC01,UI4,field,OAT04,terminal,X4-004,404A,404D,+,terminal,X4-004,404B,404C,-
+AHU05,OAT05,Outside Air Temperature,AI_10K,SNC01,UI5,field,OAT05,terminal,X4-005,405A,405D,+,terminal,X4-005,405B,405C,-
+AHU06,OAT06,Outside Air Temperature,AI_10K_Invert,SNC01,UI6,field,OAT06,terminal,X4-006,406A,406D,+,terminal,X4-006,406B,406C,-
+AHU07,OAT07,Outside Air Temperature,AI_10K,SNC01,UI7,field,OAT07,terminal,X4-007,407A,407D,+,terminal,X4-007,407B,407C,-
+AHU08,OAT08,Outside Air Temperature,AI_10K_Invert,SNC01,UI8,field,OAT08,terminal,X4-008,408A,408D,+,terminal,X4-008,408B,408C,-
+AHU09,OAT09,Outside Air Temperature,AI_10K,SNC01,UI9,field,OAT09,terminal,X4-009,409A,409D,+,terminal,X4-009,409B,409C,-
+AHU10,OAT10,Outside Air Temperature,AI_10K_Invert,SNC01,UI10,field,OAT10,terminal,X4-010,410A,410D,+,terminal,X4-010,410B,410C,-
+AHU11,OAT11,Outside Air Temperature,AI_10K,SNC01,UI11,field,OAT11,terminal,X4-011,411A,411D,+,terminal,X4-011,411B,411C,-
+AHU12,OAT12,Outside Air Temperature,AI_10K_Invert,SNC01,UI12,field,OAT12,terminal,X4-012,412A,412D,+,terminal,X4-012,412B,412C,-
+AHU13,OAT13,Outside Air Temperature,AI_10K,SNC01,UI13,field,OAT13,terminal,X4-013,413A,413D,+,terminal,X4-013,413B,413C,-
+AHU14,OAT14,Outside Air Temperature,AI_10K_Invert,SNC01,UI14,field,OAT14,mssb,X4-014,414A,414D,+,terminal,X4-014,414B,414C,-

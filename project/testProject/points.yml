@@ -28,12 +28,12 @@ devices:
     wiring:
       signal:
         to: {point: UI1}
-        via: [X4-001, X3-001, X2-001, X1-001]
-        labels: [4-001D, 3-001C, 2-001B, 1-001A, 0-001A]
+        via: [X4-001]
+        labels: [4-001D, 4-001A]
       common:
         to: {point: UI1}
-        via: [X4-002, X3-002, X2-002, X1-002]
-        labels: [4-002D, 3-002C, 2-002B, 1-002A, 0-001B]
+        via: [X4-002]
+        labels: [4-002C, 4-002B]
 
   OAT02:
     controller: SNC01
@@ -43,13 +43,12 @@ devices:
     wiring:
       signal:
         to: {point: UI2}
-        via: [X4-003, X3-003, X2-003, X1-003]
-        labels: [4-003D, 3-003C, 2-003B, 1-003A, 0-003A]
+        via: [X4-003]
+        labels: [4-003D, 4-003A]
       common:
-        to: {point: UI1}
-        via: [X4-002, X3-002, X2-002, X1-002]
-        labels: [4-002D, 3-002C, 2-002B, 1-002A, 0-001B]
-
+        to: {point: UI2}
+        via: [X4-002]
+        labels: [4-002C, 4-002A]
 
   # DPT01:
   #   controller: SNC01
@@ -58,14 +57,13 @@ devices:
   #   template: AI_0_10V_3WIRE
   #   wiring:
   #     supply:
-  #       to: {point: 15V_SUPPLY_1}
   #       via: [X2-F010, X4-012]
   #       labels: [4-010D, 4-010B, 4-010A]
   #     signal:
-  #       to: {point: UI2}
+  #       to: {point: UI4}
   #       via: [X2-F011, X4-003]
   #       labels: [4-011D, 4-011B, 4-011A]
   #     common:
-  #       to: {point: UI2}
+  #       to: {point: UI4}
   #       via: [X2-F012, X4-002]
   #       labels: [4-012D, 4-012B, 4-002A]

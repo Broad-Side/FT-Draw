@@ -1,68 +1,71 @@
+schema_version: 3
+
 controllers:
   SNC01:
     template: JCI_SNC25152
     point_template: GenericController.drawio
     drawing_name: SNC01 - UI Connections
 
+layout:
+  controller_origin: {x: 40, y: 80}
+  point_pitch_y: 96
+  terminal_origin_x: 520
+  terminal_column_spacing: 80
+  field_device_x: 1080
+  field_device_pitch_y: 110
+  terminal_blocks:
+    X4: {order: 1}
+    X3: {order: 2}
+    X2: {order: 3}
+    other: {order: 4}
+
 devices:
   OAT01:
+    controller: SNC01
     equipment: AHU01
     description: Outside Air Temperature
     template: AI_10K
-
-    connections:
+    wiring:
       signal:
-        controller_point: UI1
-        cable_number: 4-001
-        field_core: D
-        panel_core: A
-
-        terminals:
-          - X2-F001
-          - X4-001
-
+        to: {point: UI1}
+        via: [X4-001, X3-001, X2-001, X1-001]
+        labels: [4-001D, 3-001C, 2-001B, 1-001A, 0-001A]
       common:
-        controller_point: UI1_COMMON
-        cable_number: 4-002
-        field_core: C
-        panel_core: A
+        to: {point: UI1}
+        via: [X4-002, X3-002, X2-002, X1-002]
+        labels: [4-002D, 3-002C, 2-002B, 1-002A, 0-001B]
 
-        terminals:
-          - X2-F002
-          - X4-002
-
-  DPT01:
-    equipment: AHU01
-    description: Duct Pressure Transmitter
-    template: AI_0_10V_3WIRE
-
-    connections:
-      supply:
-        controller_point: 12(+15v)
-        cable_number: 4-010
-        field_core: RED
-        panel_core: A
-
-        terminals:
-          - X2-F010
-          - X4-010
-
+  OAT02:
+    controller: SNC01
+    equipment: AHU02
+    description: Outside Air Temperature
+    template: AI_10K
+    wiring:
       signal:
-        controller_point: UI2
-        cable_number: 4-011
-        field_core: WHITE
-        panel_core: A
-
-        terminals:
-          - X2-F011
-          - X4-011
-
+        to: {point: UI2}
+        via: [X4-003, X3-003, X2-003, X1-003]
+        labels: [4-003D, 3-003C, 2-003B, 1-003A, 0-003A]
       common:
-        controller_point: UI1_COMMON
-        cable_number: 4-012
-        field_core: BLACK
-        panel_core: A
+        to: {point: UI1}
+        via: [X4-002, X3-002, X2-002, X1-002]
+        labels: [4-002D, 3-002C, 2-002B, 1-002A, 0-001B]
 
-        terminals:
-          - X2-F012
-          - X4-012
+
+  # DPT01:
+  #   controller: SNC01
+  #   equipment: AHU01
+  #   description: Duct Pressure Transmitter
+  #   template: AI_0_10V_3WIRE
+  #   wiring:
+  #     supply:
+  #       to: {point: 15V_SUPPLY_1}
+  #       via: [X2-F010, X4-012]
+  #       labels: [4-010D, 4-010B, 4-010A]
+  #     signal:
+  #       to: {point: UI2}
+  #       via: [X2-F011, X4-003]
+  #       labels: [4-011D, 4-011B, 4-011A]
+  #     common:
+  #       to: {point: UI2}
+  #       via: [X2-F012, X4-002]
+  #       labels: [4-012D, 4-012B, 4-002A]

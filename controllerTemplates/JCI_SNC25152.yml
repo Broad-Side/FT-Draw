@@ -1,0 +1,620 @@
+schema_version: 1
+
+controller:
+  manufacturer: Johnson Controls
+  model: SNC25152
+  controller_type: programmable_controller
+
+drawing:
+  point_template: generic_controller_point_2_connection
+  point_spacing_px: 64
+  group_spacing_px: 16
+
+points:
+  UI1:
+    point_type: UI
+    display_name: UI1
+    interfaces:
+      signal:
+        role: input
+        terminal: 1
+      common:
+        role: signal_common
+        terminal: 2
+        display_name: C 1/2
+        shared_connection: UI_COMMON_1_2
+
+  UI2:
+    point_type: UI
+    display_name: UI2
+    interfaces:
+      signal:
+        role: input
+        terminal: 3
+      common:
+        role: signal_common
+        terminal: 2
+        display_name: C 1/2
+        shared_connection: UI_COMMON_1_2
+
+  UI3:
+    point_type: UI
+    display_name: UI3
+    interfaces:
+      signal:
+        role: input
+        terminal: 4
+      common:
+        role: signal_common
+        terminal: 5
+        display_name: C 3/4
+        shared_connection: UI_COMMON_3_4
+
+  UI4:
+    point_type: UI
+    display_name: UI4
+    interfaces:
+      signal:
+        role: input
+        terminal: 6
+      common:
+        role: signal_common
+        terminal: 5
+        display_name: C 3/4
+        shared_connection: UI_COMMON_3_4
+
+  UI5:
+    point_type: UI
+    display_name: UI5
+    interfaces:
+      signal:
+        role: input
+        terminal: 7
+      common:
+        role: signal_common
+        terminal: 8
+        display_name: C 5/6
+        shared_connection: UI_COMMON_5_6
+
+  UI6:
+    point_type: UI
+    display_name: UI6
+    interfaces:
+      signal:
+        role: input
+        terminal: 9
+      common:
+        role: signal_common
+        terminal: 8
+        display_name: C 5/6
+        shared_connection: UI_COMMON_5_6
+
+  UI7:
+    point_type: UI
+    display_name: UI7
+    interfaces:
+      signal:
+        role: input
+        terminal: 10
+      common:
+        role: signal_common
+        terminal: 11
+        display_name: C 7
+        shared_connection: UI_COMMON_7
+
+  15V_SUPPLY_1:
+    point_type: SUPPLY
+    display_name: +15V
+    interfaces:
+      supply:
+        role: supply_positive
+        terminal: 12
+      common:
+        role: supply_common
+        terminal: 11
+        display_name: C 7
+        shared_connection: UI_COMMON_7
+
+  UI8:
+    point_type: UI
+    display_name: UI8
+    interfaces:
+      signal:
+        role: input
+        terminal: 22
+      common:
+        role: signal_common
+        terminal: 23
+        display_name: C 8/9
+        shared_connection: UI_COMMON_8_9
+
+  UI9:
+    point_type: UI
+    display_name: UI9
+    interfaces:
+      signal:
+        role: input
+        terminal: 24
+      common:
+        role: signal_common
+        terminal: 23
+        display_name: C 8/9
+        shared_connection: UI_COMMON_8_9
+
+  UI10:
+    point_type: UI
+    display_name: UI10
+    interfaces:
+      signal:
+        role: input
+        terminal: 25
+      common:
+        role: signal_common
+        terminal: 26
+        display_name: C 10/11
+        shared_connection: UI_COMMON_10_11
+
+  UI11:
+    point_type: UI
+    display_name: UI11
+    interfaces:
+      signal:
+        role: input
+        terminal: 27
+      common:
+        role: signal_common
+        terminal: 26
+        display_name: C 10/11
+        shared_connection: UI_COMMON_10_11
+
+  UI12:
+    point_type: UI
+    display_name: UI12
+    interfaces:
+      signal:
+        role: input
+        terminal: 28
+      common:
+        role: signal_common
+        terminal: 29
+        display_name: C 12/13
+        shared_connection: UI_COMMON_12_13
+
+  UI13:
+    point_type: UI
+    display_name: UI13
+    interfaces:
+      signal:
+        role: input
+        terminal: 30
+      common:
+        role: signal_common
+        terminal: 29
+        display_name: C 12/13
+        shared_connection: UI_COMMON_12_13
+
+  UI14:
+    point_type: UI
+    display_name: UI14
+    interfaces:
+      signal:
+        role: input
+        terminal: 31
+      common:
+        role: signal_common
+        terminal: 32
+        display_name: C 14
+        shared_connection: UI_COMMON_14
+
+  15V_SUPPLY_2:
+    point_type: SUPPLY
+    display_name: +15V
+    interfaces:
+      supply:
+        role: supply_positive
+        terminal: 33
+      common:
+        role: supply_common
+        terminal: 32
+        display_name: C 14
+        shared_connection: UI_COMMON_14
+
+  BI1:
+    point_type: BI
+    display_name: BI1
+    interfaces:
+      signal:
+        role: input
+        terminal: 13
+      common:
+        role: signal_common
+        terminal: 14
+        display_name: C 1/2
+        shared_connection: BI_COMMON_1_2
+
+  BI2:
+    point_type: BI
+    display_name: BI2
+    interfaces:
+      signal:
+        role: input
+        terminal: 15
+      common:
+        role: signal_common
+        terminal: 14
+        display_name: C 1/2
+        shared_connection: BI_COMMON_1_2
+
+  BI3:
+    point_type: BI
+    display_name: BI3
+    interfaces:
+      signal:
+        role: input
+        terminal: 16
+      common:
+        role: signal_common
+        terminal: 17
+        display_name: C 3/4
+        shared_connection: BI_COMMON_3_4
+
+  BI4:
+    point_type: BI
+    display_name: BI4
+    interfaces:
+      signal:
+        role: input
+        terminal: 18
+      common:
+        role: signal_common
+        terminal: 17
+        display_name: C 3/4
+        shared_connection: BI_COMMON_3_4
+
+  BI5:
+    point_type: BI
+    display_name: BI5
+    interfaces:
+      signal:
+        role: input
+        terminal: 19
+      common:
+        role: signal_common
+        terminal: 20
+        display_name: C 5/6
+        shared_connection: BI_COMMON_5_6
+
+  BI6:
+    point_type: BI
+    display_name: BI6
+    interfaces:
+      signal:
+        role: input
+        terminal: 21
+      common:
+        role: signal_common
+        terminal: 20
+        display_name: C 5/6
+        shared_connection: BI_COMMON_5_6
+
+  BI7:
+    point_type: BI
+    display_name: BI7
+    interfaces:
+      signal:
+        role: input
+        terminal: 34
+      common:
+        role: signal_common
+        terminal: 35
+        display_name: C 7/8
+        shared_connection: BI_COMMON_7_8
+
+  BI8:
+    point_type: BI
+    display_name: BI8
+    interfaces:
+      signal:
+        role: input
+        terminal: 36
+      common:
+        role: signal_common
+        terminal: 35
+        display_name: C 7/8
+        shared_connection: BI_COMMON_7_8
+
+  BI9:
+    point_type: BI
+    display_name: BI9
+    interfaces:
+      signal:
+        role: input
+        terminal: 37
+      common:
+        role: signal_common
+        terminal: 38
+        display_name: C 9/10
+        shared_connection: BI_COMMON_9_10
+
+  BI10:
+    point_type: BI
+    display_name: BI10
+    interfaces:
+      signal:
+        role: input
+        terminal: 39
+      common:
+        role: signal_common
+        terminal: 38
+        display_name: C 9/10
+        shared_connection: BI_COMMON_9_10
+
+  BI11:
+    point_type: BI
+    display_name: BI11
+    interfaces:
+      signal:
+        role: input
+        terminal: 40
+      common:
+        role: signal_common
+        terminal: 41
+        display_name: C 11
+        shared_connection: BI_COMMON_11
+
+  BO1:
+    point_type: BO
+    display_name: BO1
+    interfaces:
+      output:
+        role: switched_output
+        terminal: 1
+      common:
+        role: output_common
+        terminal: 2
+
+  BO2:
+    point_type: BO
+    display_name: BO2
+    interfaces:
+      output:
+        role: switched_output
+        terminal: 3
+      common:
+        role: output_common
+        terminal: 4
+
+  BO3:
+    point_type: BO
+    display_name: BO3
+    interfaces:
+      output:
+        role: switched_output
+        terminal: 5
+      common:
+        role: output_common
+        terminal: 6
+
+  BO4:
+    point_type: BO
+    display_name: BO4
+    interfaces:
+      output:
+        role: switched_output
+        terminal: 7
+      common:
+        role: output_common
+        terminal: 8
+
+  BO5:
+    point_type: BO
+    display_name: BO5
+    interfaces:
+      output:
+        role: switched_output
+        terminal: 9
+      common:
+        role: output_common
+        terminal: 10
+
+  BO6:
+    point_type: BO
+    display_name: BO6
+    interfaces:
+      output:
+        role: switched_output
+        terminal: 11
+      common:
+        role: output_common
+        terminal: 12
+
+  BO7:
+    point_type: BO
+    display_name: BO7
+    interfaces:
+      output:
+        role: switched_output
+        terminal: 13
+      common:
+        role: output_common
+        terminal: 14
+
+  CO1:
+    point_type: CO
+    display_name: CO1
+    drawing_layout: generic_controller_point_4_connection
+    interfaces:
+      output:
+        role: configurable_output
+        terminal: 15
+      output_common:
+        role: output_common
+        terminal: 16
+      supply_common:
+        role: supply_common
+        terminal: 19
+        shared_connection: CO_SUPPLY_1_2
+      supply:
+        role: supply_positive
+        terminal: 20
+        shared_connection: CO_SUPPLY_1_2
+
+  CO2:
+    point_type: CO
+    display_name: CO2
+    drawing_layout: generic_controller_point_4_connection
+    interfaces:
+      output:
+        role: configurable_output
+        terminal: 17
+      output_common:
+        role: output_common
+        terminal: 18
+      supply_common:
+        role: supply_common
+        terminal: 19
+        shared_connection: CO_SUPPLY_1_2
+      supply:
+        role: supply_positive
+        terminal: 20
+        shared_connection: CO_SUPPLY_1_2
+
+  CO3:
+    point_type: CO
+    display_name: CO3
+    drawing_layout: generic_controller_point_4_connection
+    interfaces:
+      output:
+        role: configurable_output
+        terminal: 21
+      output_common:
+        role: output_common
+        terminal: 22
+      supply_common:
+        role: supply_common
+        terminal: 25
+        shared_connection: CO_SUPPLY_3_4
+      supply:
+        role: supply_positive
+        terminal: 26
+        shared_connection: CO_SUPPLY_3_4
+
+  CO4:
+    point_type: CO
+    display_name: CO4
+    drawing_layout: generic_controller_point_4_connection
+    interfaces:
+      output:
+        role: configurable_output
+        terminal: 23
+      output_common:
+        role: output_common
+        terminal: 24
+      supply_common:
+        role: supply_common
+        terminal: 25
+        shared_connection: CO_SUPPLY_3_4
+      supply:
+        role: supply_positive
+        terminal: 26
+        shared_connection: CO_SUPPLY_3_4
+
+  AO1:
+    point_type: AO
+    display_name: AO1
+    interfaces:
+      signal:
+        role: analog_output
+        terminal: 27
+      common:
+        role: signal_common
+        terminal: 28
+        display_name: C 1/2
+        shared_connection: AO_COMMON_1_2
+
+  AO2:
+    point_type: AO
+    display_name: AO2
+    interfaces:
+      signal:
+        role: analog_output
+        terminal: 29
+      common:
+        role: signal_common
+        terminal: 28
+        display_name: C 1/2
+        shared_connection: AO_COMMON_1_2
+
+  AO3:
+    point_type: AO
+    display_name: AO3
+    interfaces:
+      signal:
+        role: analog_output
+        terminal: 30
+      common:
+        role: signal_common
+        terminal: 31
+        display_name: C 3/4
+        shared_connection: AO_COMMON_3_4
+
+  AO4:
+    point_type: AO
+    display_name: AO4
+    interfaces:
+      signal:
+        role: analog_output
+        terminal: 32
+      common:
+        role: signal_common
+        terminal: 31
+        display_name: C 3/4
+        shared_connection: AO_COMMON_3_4
+
+networks:
+  sa_bus:
+    network_type: RS485
+    display_name: SA Bus
+    drawing_layout: generic_network_4_connection
+    interfaces:
+      power:
+        role: network_power
+        terminal: 1
+      common:
+        role: network_common
+        terminal: 2
+      shield:
+        role: shield
+        terminal: 3
+      data:
+        role: differential_data
+        terminal: 4
+
+capabilities:
+  UI:
+    accepted_signal_types:
+      - thermistor_10k
+      - thermistor_1k
+      - rtd
+      - dry_contact
+      - voltage_0_10v
+      - current_4_20ma
+
+  BI:
+    accepted_signal_types:
+      - dry_contact
+      - pulse_counter
+
+  AO:
+    available_output_types:
+      - voltage_0_10v
+      - current_4_20ma
+
+  BO:
+    available_output_types:
+      - triac
+
+  CO:
+    available_output_types:
+      - triac
+      - voltage_0_10v

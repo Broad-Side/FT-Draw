@@ -1,0 +1,15 @@
+terminal_blocks:
+  X2:
+    location: FIELD_MARSHALLING
+    enclosure: JB-AHU01
+    drawing_order: 1
+
+  X3:
+    location: MSSB
+    enclosure: MSSB-CE1
+    drawing_order: 2
+
+  X4:
+    location: BAS_PANEL
+    enclosure: BMS-CP01
+    drawing_order: 3

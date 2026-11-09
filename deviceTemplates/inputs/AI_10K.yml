@@ -1,54 +1,48 @@
+schema_version: 1
+
 device_template:
-
   name: AI_10K
-
   description: 10K Type II Temperature Sensor
-
   category: sensor
 
   compatible_point_types:
     - UI
 
   drawing:
-
-    symbol: TemperatureSensor
+    template: AI_10K.drawio
+    group_id: AI_10K
+    label_id: device_label
 
     interfaces:
-
       signal:
-
-        id: signal
-
+        drawio_id: signal
         label: SIG
-
         interface_type: signal
+        role: analog_signal
+        required: true
 
       common:
-
-        id: common
-
+        drawio_id: common
         label: COM
-
         interface_type: common
+        role: signal_common
+        required: true
 
   connections:
-
     signal:
-
+      device_interface: signal
       controller_interface: signal
 
     common:
-
+      device_interface: common
       controller_interface: common
 
   labels:
-
     display:
       - tag
       - description
 
   schedule:
-
     type: Temperature Sensor
-
+    sensor_type: 10K Type II Thermistor
     units: degC

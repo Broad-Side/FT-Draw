@@ -1,0 +1,16 @@
+cable:
+  tag:
+  number:
+  type:
+  core_count:
+  conductor_size_mm2:
+  screened:
+  fire_rating:
+  voltage_rating:
+  manufacturer:
+  part_number:
+  route_from:
+  route_to:
+  estimated_length_m:
+  installed_length_m:
+  notes:

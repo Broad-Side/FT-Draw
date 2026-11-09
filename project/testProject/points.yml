@@ -1,0 +1,68 @@
+controllers:
+  SNC01:
+    template: JCI_SNC25152
+    point_template: GenericController.drawio
+    drawing_name: SNC01 - UI Connections
+
+devices:
+  OAT01:
+    equipment: AHU01
+    description: Outside Air Temperature
+    template: AI_10K
+
+    connections:
+      signal:
+        controller_point: UI1
+        cable_number: 4-001
+        field_core: D
+        panel_core: A
+
+        terminals:
+          - X2-F001
+          - X4-001
+
+      common:
+        controller_point: UI1_COMMON
+        cable_number: 4-002
+        field_core: C
+        panel_core: A
+
+        terminals:
+          - X2-F002
+          - X4-002
+
+  DPT01:
+    equipment: AHU01
+    description: Duct Pressure Transmitter
+    template: AI_0_10V_3WIRE
+
+    connections:
+      supply:
+        controller_point: 12(+15v)
+        cable_number: 4-010
+        field_core: RED
+        panel_core: A
+
+        terminals:
+          - X2-F010
+          - X4-010
+
+      signal:
+        controller_point: UI2
+        cable_number: 4-011
+        field_core: WHITE
+        panel_core: A
+
+        terminals:
+          - X2-F011
+          - X4-011
+
+      common:
+        controller_point: UI1_COMMON
+        cable_number: 4-012
+        field_core: BLACK
+        panel_core: A
+
+        terminals:
+          - X2-F012
+          - X4-012

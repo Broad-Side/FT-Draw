@@ -153,17 +153,6 @@ points:
         drawio_id: UI14_COMMON
         terminal: 32
 
-
-  UI13:
-    point_type: UI
-    interfaces:
-      signal:
-        drawio_id: UI13
-        terminal: 27
-      common:
-        drawio_id: UI12_COMMON
-        terminal: 26
-
   33(+15v):
     point_type: +
     interfaces:

@@ -1,4 +1,4 @@
-schema_version: 3
+schema_version: 4
 
 controllers:
   SNC01:
@@ -8,164 +8,68 @@ controllers:
 
 layout:
   controller_origin: {x: 40, y: 80}
-  # TBD point_pitch_y: 96
+
+  # Minimum distance between point starting positions.
+  point_pitch_y: 96
+
+  # Clearance below the lowest part of the previous point.
+  point_vertical_gap: 8
 
   terminal_origin_x: 435
   terminal_column_spacing: 210
 
   field_device_x: 1228
-  # TBD field_device_pitch_y: 96
 
   terminal_blocks:
-    # Closest to Controler to furtherest Away
+    # Closest to controller to furthest away.
 
-    X3: {order: 1} # 24VDC Terminal Strip
-    X4: {order: 1} # 24VDC Terminal Strip Neutral 
-    
-    X5: {order: 2} # 24VAC Terminal Strip
-    X6: {order: 2} # 24VAC Terminal Strip Neutral 
-    
-    X7: {order: 3} # Digital IO Strip
-    X8: {order: 3} # Anologue IO Strip
-    
-    # Use below to show if the point is in an MSSB
-    other: {order: 4}
+    X3: {order: 1}  # 24 VDC terminal strip
+    X4: {order: 1}  # 24 VDC common terminal strip
+
+    X5: {order: 2}  # 24 VAC terminal strip
+    X6: {order: 2}  # 24 VAC common terminal strip
+
+    X7: {order: 3}  # Digital I/O terminal strip
+    X8: {order: 3}  # Analog I/O terminal strip
+
+    other: {order: 4}  # MSSB or other terminals
 
 points:
   TT12-OAT:
     controller: SNC01
     equipment: AHU04
     description: Outside Air Temperature
-    
+
+    controller_point:
+      point: UI1
+
+    field_device:
+      label: TT12-OAT
+
+      interfaces:
+        signal:
+          order: 1
+          label: SIG
+
+        supply:
+          order: 2
+          label: "+"
+
     wiring:
       signal:
-        to: {point: UI1}
+        from: {point: UI1, interface: signal}
         via: [X8-001B]
         labels: [8-001B, 8-001B]
-        fieldside_label: SIG
+        to: {field_interface: signal}
 
-      common:
+      common_ground:
         from: {point: UI1, interface: common}
-        to: {terminal: X8-002A}
+        via: []
         labels: [X8-002]
-
+        to: {terminal: X8-002A}
 
       supply:
-        to: {terminal: X3-001}
+        from: {terminal: X3-001}
         via: [X8-001A]
         labels: [38-001, 8-001A]
-        fieldside_label: +
-
-      # auxiliary_wiring:
-      #   common_ground:
-      #     from: {point: UI2, interface: common}
-      #     to: {terminal: X8-002B}
-      #     labels: [X8-002]
-
-
-
-  # NT07-OAH:
-  #   controller: SNC01
-  #   equipment: Cell 1
-  #   description: Outside Air Humidity
-  #   template: AI_mA_2WIRE
-
-  #   wiring:
-  #     supply:
-  #       to: {terminal: X3-003}
-  #       via: [X8-003A]
-  #       labels: [38-003, 8-003A]
-
-  #     signal:
-  #       to: {point: UI2}
-  #       via: [X8-003B]
-  #       labels: [8-003B, 8-003B]
-
-    # auxiliary_wiring:
-    #   common_ground:
-    #     from: {point: UI2, interface: common}
-    #     to: {terminal: X8-002B}
-    #     labels: [X8-002]
-
-  # TT12-OAT:
-  #   controller: SNC01
-  #   equipment: Cell 1
-  #   description: Outside Air Humidity
-  #   template: AI_mA_2WIRE
-
-  #   wiring:
-  #     supply:
-  #       to: {terminal: X3-002}
-  #       via: [X8-001A]
-  #       labels: [38-001, 8-001A]
-
-  #     signal:
-  #       to: {point: UI2}
-  #       via: [X8-001B]
-  #       labels: [8-001B, 8-001B]
-
-  #   auxiliary_wiring:
-  #     common_ground:
-  #       from: {point: UI2, interface: common}
-  #       to: {terminal: X4-002B}
-  #       labels: [X4-002]
-
-  # NT07-OAH:
-  #   controller: SNC01
-  #   equipment: AHU02
-  #   description: Outside Air Humidity
-  #   template: AI_10K
-  #   wiring:
-  #     signal:
-  #       to: {point: UI2}
-  #       via: [X8-001B]
-  #       labels: [8-001B, 8-001B]
-  #     common:
-  #       to: {terminal: X4-001}
-  #       via: [X4-001, X8-002B]
-  #       labels: [X4-001,48-001,8-002B]
-
-  # DPT01:
-  #   controller: SNC01
-  #   equipment: AHU01
-  #   description: Duct Pressure Transmitter
-  #   template: AI_0_10V_3WIRE
-  #   wiring:
-  #     supply:
-  #       to: {terminal: X3-001}
-  #       via: [X3-001,X8-003A]
-  #       labels: [3-001, 38-001, 8-003A]
-
-  #     signal:
-  #       to: {point: UI4}
-  #       # via: [X3-004, X4-003]
-  #       via: [X8-004A]
-  #       labels: [8-004A, 8-004A]
-
-  #     common:
-  #       to: {point: UI4}
-  #       via: [X8-004B]
-  #       labels: [8-004B, 8-004B]
-
-  # OAT04:
-  #   controller: SNC01
-  #   equipment: AHU04
-  #   description: Outside Air Temperature
-  #   template: AI_mA_2WIRE
-
-  #   wiring:
-  #     supply:
-  #       to: {terminal: X3-002}
-  #       via: [X8-005A]
-  #       labels: [38-002, 8-005A]
-
-  #     signal:
-  #       to: {point: UI5}
-  #       via: [X8-007A]
-  #       labels: [8-007A, 8-007A]
-
-  #   auxiliary_wiring:
-  #     common_ground:
-  #       from: {point: UI5, interface: common}
-  #       to: {terminal: X4-002}
-  #       labels: [X4-002]
+        to: {field_interface: supply}

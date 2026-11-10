@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 import yaml
 
 EDGE_STYLE = 'edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2;jumpStyle=arc;'
-RENDERER_REVISION = 14
+RENDERER_REVISION = 15
 
 TEXT_STYLE = 'text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Courier New;fontSize=10;'
 
@@ -264,12 +264,31 @@ def main():
     shared_controller_targets = {}
     shared_keys_by_interface = {}
     shared_owner_by_key = {}
+    point_y = {}
+    current_point_y = start_y
+    previous_device_height = None
     for index, (controller_id, point_id) in enumerate(point_order):
+        if index:
+            current_point_y += max(point_pitch, (previous_device_height or 0) + 8)
+        point_y[(controller_id, point_id)] = current_point_y
         controller = controller_defs[project['controllers'][controller_id]['template']]
         pd = controller['points'][point_id]; interfaces = pd['interfaces']
         primary = next((n for n in interfaces if n in ('signal','input','output','supply')), next(iter(interfaces)))
         secondary = next((n for n in interfaces if n in ('common','output_common','supply_common')), None)
-        items, ids = flatten_template(generic_root, f'{controller_id}_{point_id}', controller_x, start_y + index*point_pitch)
+        items, ids = flatten_template(generic_root, f'{controller_id}_{point_id}', controller_x, current_point_y)
+        # Measure the tallest field device wired to this point so the next
+        # point starts below its lowest part plus the standard 8 px gap.
+        previous_device_height = 0
+        for candidate in project['devices'].values():
+            candidate_controller = candidate.get('controller', next(iter(project['controllers'])))
+            wired_points = [w.get('to', {}).get('point') for w in candidate['wiring'].values()]
+            if candidate_controller == controller_id and point_id in wired_points:
+                candidate_def = device_defs[candidate['template']]['device_template']['drawing']
+                candidate_root = load_root(find_named(repo/'drawioTemplates/devices', Path(candidate_def['template']).stem, '.drawio'))
+                group = get_element(candidate_root, candidate_def['group_id']) if candidate_def.get('group_id') else None
+                geom = next((c for c in group if c.tag.endswith('mxGeometry')), None) if group is not None else None
+                if geom is not None:
+                    previous_device_height = max(previous_device_height, float(geom.get('height', 0)))
         lookup = {e.get('id'): e for e in items}
         set_value(lookup[ids['point_type']], pd.get('display_name', point_id))
         set_value(lookup[ids['primary_connection']], str(interfaces[primary].get('terminal','')))
@@ -307,20 +326,19 @@ def main():
     for index, (tag, device) in enumerate(project['devices'].items()):
         definition = device_defs[device['template']]['device_template']; drawing = definition['drawing']
         device_root = load_root(find_named(repo/'drawioTemplates/devices', Path(drawing['template']).stem, '.drawio'))
-        # Keep field devices aligned to the controller point grid. The field
-        # symbols use a 1 px visual offset after the first row, rather than
-        # accumulating a 97 px pitch error on every subsequent device.
-        device_top = start_y + index * point_pitch + (1 if index else 0)
-        items, ids = flatten_template(device_root, f'dev_{tag}', device_x, device_top)
-        lookup = {e.get('id'): e for e in items}; set_value(lookup[ids[drawing['label_id']]], tag)
-        for item in items: out.append(item)
-        device_targets[tag] = {name: ids[cfg['drawio_id']] for name,cfg in drawing['interfaces'].items()}
+        # Keep field devices aligned to their associated controller point.
         point_destinations = [
             wire.get('to', {}).get('point')
             for wire in device['wiring'].values()
             if wire.get('to', {}).get('point')
         ]
         first_point = point_destinations[0] if point_destinations else None
+        point_key = (device.get('controller', next(iter(project['controllers']))), first_point)
+        device_top = point_y.get(point_key, start_y + index * point_pitch) + (1 if index else 0)
+        items, ids = flatten_template(device_root, f'dev_{tag}', device_x, device_top)
+        lookup = {e.get('id'): e for e in items}; set_value(lookup[ids[drawing['label_id']]], tag)
+        for item in items: out.append(item)
+        device_targets[tag] = {name: ids[cfg['drawio_id']] for name,cfg in drawing['interfaces'].items()}
         controller_id = device.get('controller', next(iter(project['controllers'])))
         desc_id = f'{controller_id}_{first_point}_point_name'
         try: set_value(get_element(out, desc_id), f"<b>{device.get('equipment','')} - {tag}</b><br>{device.get('description','')}")
@@ -396,9 +414,8 @@ def main():
                     terminal_key = (tag, iface, terminal_id)
                     display_value = terminal_id
                     if not revision_marker_used:
-                        display_value = terminal_id
-                        # display_value = f'{terminal_id} [R{RENDERER_REVISION}]'
-                        # revision_marker_used = True
+                        display_value = f'{terminal_id} [R{RENDERER_REVISION}]'
+                        revision_marker_used = True
                     oid = add_terminal(out, terminal_id, x, row_y, display_value)
                     element = get_element(out, oid)
                     unique_id = f'{oid}_{tag}_{iface}'
@@ -445,6 +462,56 @@ def main():
                 )
                 final_label_x = rightmost_terminal_x + 80
             add_label(out, labels[-1], final_label_x, device_y)
+
+
+    # Controller-only auxiliary routes, such as an input common/reference
+    # landed on a terminal for grounding. These routes do not connect to a
+    # field-device interface.
+    for tag, device in project['devices'].items():
+        controller_id = device.get('controller', next(iter(project['controllers'])))
+        for route_name, route in device.get('auxiliary_wiring', {}).items():
+            source_cfg = route.get('from', {})
+            destination_cfg = route.get('to', {})
+            point = source_cfg.get('point')
+            interface_name = source_cfg.get('interface', 'common')
+            destination_terminal = destination_cfg.get('terminal')
+            if not point:
+                raise ValueError(f'{tag}.auxiliary_wiring.{route_name}: from.point is required')
+            if not destination_terminal:
+                raise ValueError(f'{tag}.auxiliary_wiring.{route_name}: to.terminal is required')
+            source_key = (controller_id, point, interface_name)
+            if source_key not in point_targets:
+                raise ValueError(
+                    f'{tag}.auxiliary_wiring.{route_name}: controller source '
+                    f'{controller_id}.{point}.{interface_name} was not found'
+                )
+
+            via = list(route.get('via', []))
+            complete_terminal_path = via + [destination_terminal]
+            validate_terminal_order(tag, f'auxiliary_wiring.{route_name}', complete_terminal_path)
+            labels = list(route.get('labels', []))
+            if len(labels) != len(complete_terminal_path):
+                raise ValueError(
+                    f'{tag}.auxiliary_wiring.{route_name}: labels must equal via '
+                    f'terminals plus destination terminal; expected '
+                    f'{len(complete_terminal_path)}, got {len(labels)}'
+                )
+
+            previous = point_targets[source_key]
+            _, row_y = centre(out, previous)
+            for i, terminal_id in enumerate(complete_terminal_path):
+                x = terminal_column_x(terminal_id)
+                oid = add_terminal(out, terminal_id, x, row_y)
+                element = get_element(out, oid)
+                unique_id = f'{oid}_{tag}_aux_{route_name}_{i}'
+                element.set('id', unique_id)
+                add_edge(out, previous, unique_id)
+                add_label(out, labels[i], x - 65, row_y)
+                previous = unique_id
+            print(
+                f'Auxiliary route: {tag}.{route_name} '
+                f'{point}.{interface_name} -> {destination_terminal}'
+            )
 
     ET.indent(mx, space='  '); a.output.parent.mkdir(parents=True, exist_ok=True)
     ET.ElementTree(mx).write(a.output, encoding='utf-8', xml_declaration=True)

@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 import yaml
 
 EDGE_STYLE = 'edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2;jumpStyle=arc;'
-RENDERER_REVISION = 13
+RENDERER_REVISION = 16
 
 TEXT_STYLE = 'text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Courier New;fontSize=10;'
 
@@ -18,6 +18,8 @@ def parse_args():
     p.add_argument('--output', type=Path, default=Path('output.drawio'))
     p.add_argument('--root', type=Path, default=Path(__file__).resolve().parent)
     p.add_argument('--background', type=Path)
+    p.add_argument('--ignore-terminal-reuse', action='store_true', help='Warn and continue when a terminal is used by more than one route')
+    p.add_argument('--ignore-terminal-order', action='store_true', help='Warn and continue when via terminals are not in terminal_blocks order')
     return p.parse_args()
 
 
@@ -112,6 +114,16 @@ def flatten_template(root, prefix, origin_x, origin_y):
     return output, id_map
 
 
+def template_height(root):
+    """Bounding-box height of the flattened template (works with or without a group)."""
+    items, _ = flatten_template(root, 'measure', 0, 0)
+    bottom = 0.0
+    for item in items:
+        g = geometry(item)
+        bottom = max(bottom, float(g.get('y', 0)) + float(g.get('height', 0)))
+    return bottom
+
+
 def set_value(element, value):
     if element.tag == 'object':
         element.set('label', value)
@@ -130,12 +142,42 @@ def centre(root, element_id):
     return float(g.get('x', 0)) + float(g.get('width', 0))/2, float(g.get('y', 0)) + float(g.get('height', 0))/2
 
 
+PLACED_TERMINALS = []  # every terminal box already drawn
+TERMINAL_STACK_PITCH = 32
+
+
 def add_terminal(root, terminal_id, x, y, display_value=None):
     oid = 'term_' + terminal_id.replace('-', '_')
+    if any(e.get('id') == oid for e in root):
+        n = 2
+        while any(e.get('id') == f'{oid}_{n}' for e in root):
+            n += 1
+        oid = f'{oid}_{n}'
     c = ET.Element('mxCell', {'id': oid, 'parent': '1', 'vertex': '1', 'value': display_value or terminal_id,
         'style': 'rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;fontSize=10;'})
-    ET.SubElement(c, 'mxGeometry', {'x': str(x), 'y': str(y-6), 'width': '60', 'height': '12', 'as': 'geometry'})
+    text = str(display_value or terminal_id)
+    width = max(60, int(len(text) * 6.5) + 10)  # Courier New 10pt is ~6 px per char
+    top = y - 6
+    geo = ET.SubElement(c, 'mxGeometry', {'x': str(x), 'y': str(top), 'width': str(width), 'height': '12', 'as': 'geometry'})
     root.append(c)
+    # The terminal being placed keeps its own row; any box already in the same
+    # column that it would overlap is moved down one row pitch (32) below it.
+    # Edges are attached to the boxes, so they follow automatically.
+    new_box = {'x0': x, 'x1': x + width, 'top': top, 'geo': geo}
+    pending = [new_box]
+    PLACED_TERMINALS.append(new_box)
+    while pending:
+        anchor = pending.pop()
+        for other in PLACED_TERMINALS:
+            if other is anchor or other is new_box and anchor is new_box:
+                continue
+            if (anchor['x0'] < other['x1'] and anchor['x1'] > other['x0']
+                    and anchor['top'] < other['top'] + 12 and anchor['top'] + 12 > other['top']):
+                if other is new_box:
+                    continue
+                other['top'] = anchor['top'] + TERMINAL_STACK_PITCH
+                other['geo'].set('y', str(other['top']))
+                pending.append(other)
     return oid
 
 
@@ -216,6 +258,28 @@ def main():
     }
     default_terminal_order = terminal_block_orders.get('OTHER', len(terminal_block_orders) + 1)
 
+    # Blocks may share an order/column; terminals that would overlap are stacked vertically.
+    if 'OTHER' not in terminal_block_orders and terminal_block_orders:
+        _max_listed = max(terminal_block_orders.values())
+        default_terminal_order = _max_listed + 1
+    _warned_blocks = set()
+
+    terminal_owner = {}
+
+    def claim_terminal(terminal_id, owner):
+        block = terminal_block_name(terminal_id)
+        if terminal_block_orders and block not in terminal_block_orders and block not in _warned_blocks:
+            _warned_blocks.add(block)
+            print(f'WARNING: terminal block {block} is not listed in layout.terminal_blocks; '
+                  f'placing it in the OTHER column (x={terminal_column_x(terminal_id):g}).', file=sys.stderr)
+        prev = terminal_owner.setdefault(str(terminal_id), owner)
+        if prev != owner:
+            message = f'Terminal {terminal_id} used by both {prev} and {owner}'
+            if a.ignore_terminal_reuse:
+                print(f'WARNING: {message}', file=sys.stderr)
+            else:
+                raise ValueError(message + '\n  Re-run with --ignore-terminal-reuse to continue.')
+
     def terminal_block_name(terminal_id):
         terminal_id = str(terminal_id)
         return terminal_id.split('-', 1)[0].upper() if '-' in terminal_id else 'OTHER'
@@ -224,6 +288,23 @@ def main():
         block = terminal_block_name(terminal_id)
         order = terminal_block_orders.get(block, default_terminal_order)
         return terminal_x0 + (order - 1) * terminal_pitch
+
+    def validate_terminal_order(tag, interface_name, via):
+        if len(via) < 2:
+            return
+        orders = [terminal_block_orders.get(terminal_block_name(t), default_terminal_order) for t in via]
+        if orders == sorted(orders):
+            return
+        suggested = [t for _, t in sorted(zip(orders, via), key=lambda item: item[0])]
+        message = (
+            f'{tag}.{interface_name}: via terminals are not in terminal_blocks order.\n'
+            f'  Current:   via: [{", ".join(map(str, via))}]\n'
+            f'  Suggested: via: [{", ".join(map(str, suggested))}]'
+        )
+        if a.ignore_terminal_order:
+            print(f'WARNING: {message}', file=sys.stderr)
+        else:
+            raise ValueError(message + '\n  Re-run with --ignore-terminal-order to continue without changing the YAML.')
 
     add_boundary(out, 'region_mssb_start', 1020, 'MSSB')
     add_boundary(out, 'region_field_start', 1200, 'Field')
@@ -244,14 +325,33 @@ def main():
 
     point_targets = {}
     shared_controller_targets = {}
-    shared_keys_by_interface = {}
     shared_owner_by_key = {}
+    point_y = {}
+    current_point_y = start_y
+    previous_device_height = 0
+    # Uniform gap between the bottom of the taller of (controller point, field device)
+    # and the top of the next point. Default 32 = 96 pitch for a 64 px point.
+    controller_row_height = template_height(generic_root)
+    point_gap = float(layout.get('point_gap', layout.get('point_gap_y', point_pitch - controller_row_height)))
     for index, (controller_id, point_id) in enumerate(point_order):
+        if index:
+            current_point_y += max(controller_row_height, previous_device_height) + point_gap
+        point_y[(controller_id, point_id)] = current_point_y
         controller = controller_defs[project['controllers'][controller_id]['template']]
         pd = controller['points'][point_id]; interfaces = pd['interfaces']
         primary = next((n for n in interfaces if n in ('signal','input','output','supply')), next(iter(interfaces)))
         secondary = next((n for n in interfaces if n in ('common','output_common','supply_common')), None)
-        items, ids = flatten_template(generic_root, f'{controller_id}_{point_id}', controller_x, start_y + index*point_pitch)
+        items, ids = flatten_template(generic_root, f'{controller_id}_{point_id}', controller_x, current_point_y)
+        # Measure the tallest field device wired to this point so the next
+        # point starts below its lowest part plus the standard 8 px gap.
+        previous_device_height = 0
+        for candidate in project['devices'].values():
+            candidate_controller = candidate.get('controller', next(iter(project['controllers'])))
+            wired_points = [w.get('to', {}).get('point') for w in candidate['wiring'].values()]
+            if candidate_controller == controller_id and point_id in wired_points:
+                candidate_def = device_defs[candidate['template']]['device_template']['drawing']
+                candidate_root = load_root(find_named(repo/'drawioTemplates/devices', Path(candidate_def['template']).stem, '.drawio'))
+                previous_device_height = max(previous_device_height, template_height(candidate_root))
         lookup = {e.get('id'): e for e in items}
         set_value(lookup[ids['point_type']], pd.get('display_name', point_id))
         set_value(lookup[ids['primary_connection']], str(interfaces[primary].get('terminal','')))
@@ -282,27 +382,24 @@ def main():
                 if secondary_shared:
                     shared_controller_targets[(controller_id, secondary_shared)] = ids['secondary_connection']
                     shared_owner_by_key[(controller_id, secondary_shared)] = point_id
-            if secondary_shared:
-                shared_keys_by_interface[(controller_id, point_id, secondary)] = (controller_id, secondary_shared)
 
     device_targets = {}
     for index, (tag, device) in enumerate(project['devices'].items()):
         definition = device_defs[device['template']]['device_template']; drawing = definition['drawing']
         device_root = load_root(find_named(repo/'drawioTemplates/devices', Path(drawing['template']).stem, '.drawio'))
-        # Keep field devices aligned to the controller point grid. The field
-        # symbols use a 1 px visual offset after the first row, rather than
-        # accumulating a 97 px pitch error on every subsequent device.
-        device_top = start_y + index * point_pitch + (1 if index else 0)
-        items, ids = flatten_template(device_root, f'dev_{tag}', device_x, device_top)
-        lookup = {e.get('id'): e for e in items}; set_value(lookup[ids[drawing['label_id']]], tag)
-        for item in items: out.append(item)
-        device_targets[tag] = {name: ids[cfg['drawio_id']] for name,cfg in drawing['interfaces'].items()}
+        # Keep field devices aligned to their associated controller point.
         point_destinations = [
             wire.get('to', {}).get('point')
             for wire in device['wiring'].values()
             if wire.get('to', {}).get('point')
         ]
         first_point = point_destinations[0] if point_destinations else None
+        point_key = (device.get('controller', next(iter(project['controllers']))), first_point)
+        device_top = point_y.get(point_key, start_y + index * point_pitch)
+        items, ids = flatten_template(device_root, f'dev_{tag}', device_x, device_top)
+        lookup = {e.get('id'): e for e in items}; set_value(lookup[ids[drawing['label_id']]], tag)
+        for item in items: out.append(item)
+        device_targets[tag] = {name: ids[cfg['drawio_id']] for name,cfg in drawing['interfaces'].items()}
         controller_id = device.get('controller', next(iter(project['controllers'])))
         desc_id = f'{controller_id}_{first_point}_point_name'
         try: set_value(get_element(out, desc_id), f"<b>{device.get('equipment','')} - {tag}</b><br>{device.get('description','')}")
@@ -312,7 +409,6 @@ def main():
     common_route_cache = {}
     common_source_use_count = {}
     common_branch_count = {}
-    revision_marker_used = False
     for tag, device in project['devices'].items():
         controller_id = device.get('controller', next(iter(project['controllers'])))
         for iface, wire in device['wiring'].items():
@@ -320,6 +416,7 @@ def main():
             target_device = device_targets[tag][iface]
             _, device_y = centre(out, target_device)
             via = list(wire.get('via', [])); labels = list(wire.get('labels', []))
+            validate_terminal_order(tag, iface, via)
             terminal_destination = destination.get('terminal') or destination.get('terminal_strip')
             if terminal_destination:
                 if iface not in ('supply', 'common', 'supply_common', 'output_common'):
@@ -333,28 +430,24 @@ def main():
                 if len(labels) != len(via) + 1:
                     raise ValueError(f'{tag}.{iface}: expected {len(via)+1} labels for terminal destination')
                 row_y = device_y
+                claim_terminal(terminal_destination, f'{tag}.{iface}')
                 source = add_terminal(out, terminal_destination, terminal_column_x(terminal_destination), row_y)
                 source_element = get_element(out, source)
                 source_id = f'{source}_{tag}_{iface}_destination'
                 source_element.set('id', source_id)
                 source = source_id
                 source_x, source_y = centre(out, source)
-                route_x0 = terminal_x0
                 is_common_interface = False
-                is_shared_branch = False
                 print(f'External terminal destination: {tag}.{iface} starts at {terminal_destination}')
             else:
                 point = destination['point']; controller_iface = destination.get('interface', iface)
                 source = point_targets[(controller_id, point, controller_iface)]
                 source_x, source_y = centre(out, source)
-                expected_local_source = f'{controller_id}_{point}_secondary_connection'
                 is_common_interface = controller_iface in ('common', 'output_common', 'supply_common')
                 common_use_index = common_source_use_count.get(source, 0) if is_common_interface else 0
                 if is_common_interface:
                     common_source_use_count[source] = common_use_index + 1
-                route_x0 = terminal_x0
                 row_y = source_y
-                is_shared_branch = False
                 if len(labels) != len(via)+1:
                     raise ValueError(f'{tag}.{iface}: labels must equal via terminals plus one')
 
@@ -374,12 +467,8 @@ def main():
                     # aligns with X4, every X3 with X3, every X2 with X2, etc.,
                     # regardless of the order in the wire's via list.
                     x = terminal_column_x(terminal_id)
-                    terminal_key = (tag, iface, terminal_id)
-                    display_value = terminal_id
-                    if not revision_marker_used:
-                        display_value = f'{terminal_id} [R{RENDERER_REVISION}]'
-                        revision_marker_used = True
-                    oid = add_terminal(out, terminal_id, x, row_y, display_value)
+                    claim_terminal(terminal_id, f'{tag}.{iface}')
+                    oid = add_terminal(out, terminal_id, x, row_y)
                     element = get_element(out, oid)
                     unique_id = f'{oid}_{tag}_{iface}'
                     element.set('id', unique_id)
@@ -421,10 +510,61 @@ def main():
                 add_edge(out, previous, target)
                 rightmost_terminal_x = max(
                     (terminal_column_x(terminal_id) for terminal_id in via),
-                    default=terminal_column_x(terminal_destination) if terminal_destination else route_x0,
+                    default=terminal_column_x(terminal_destination) if terminal_destination else terminal_x0,
                 )
                 final_label_x = rightmost_terminal_x + 80
             add_label(out, labels[-1], final_label_x, device_y)
+
+
+    # Controller-only auxiliary routes, such as an input common/reference
+    # landed on a terminal for grounding. These routes do not connect to a
+    # field-device interface.
+    for tag, device in project['devices'].items():
+        controller_id = device.get('controller', next(iter(project['controllers'])))
+        for route_name, route in device.get('auxiliary_wiring', {}).items():
+            source_cfg = route.get('from', {})
+            destination_cfg = route.get('to', {})
+            point = source_cfg.get('point')
+            interface_name = source_cfg.get('interface', 'common')
+            destination_terminal = destination_cfg.get('terminal')
+            if not point:
+                raise ValueError(f'{tag}.auxiliary_wiring.{route_name}: from.point is required')
+            if not destination_terminal:
+                raise ValueError(f'{tag}.auxiliary_wiring.{route_name}: to.terminal is required')
+            source_key = (controller_id, point, interface_name)
+            if source_key not in point_targets:
+                raise ValueError(
+                    f'{tag}.auxiliary_wiring.{route_name}: controller source '
+                    f'{controller_id}.{point}.{interface_name} was not found'
+                )
+
+            via = list(route.get('via', []))
+            complete_terminal_path = via + [destination_terminal]
+            validate_terminal_order(tag, f'auxiliary_wiring.{route_name}', complete_terminal_path)
+            labels = list(route.get('labels', []))
+            if len(labels) != len(complete_terminal_path):
+                raise ValueError(
+                    f'{tag}.auxiliary_wiring.{route_name}: labels must equal via '
+                    f'terminals plus destination terminal; expected '
+                    f'{len(complete_terminal_path)}, got {len(labels)}'
+                )
+
+            previous = point_targets[source_key]
+            _, row_y = centre(out, previous)
+            for i, terminal_id in enumerate(complete_terminal_path):
+                x = terminal_column_x(terminal_id)
+                claim_terminal(terminal_id, f'{tag}.aux.{route_name}')
+                oid = add_terminal(out, terminal_id, x, row_y)
+                element = get_element(out, oid)
+                unique_id = f'{oid}_{tag}_aux_{route_name}_{i}'
+                element.set('id', unique_id)
+                add_edge(out, previous, unique_id)
+                add_label(out, labels[i], x - 65, row_y)
+                previous = unique_id
+            print(
+                f'Auxiliary route: {tag}.{route_name} '
+                f'{point}.{interface_name} -> {destination_terminal}'
+            )
 
     ET.indent(mx, space='  '); a.output.parent.mkdir(parents=True, exist_ok=True)
     ET.ElementTree(mx).write(a.output, encoding='utf-8', xml_declaration=True)

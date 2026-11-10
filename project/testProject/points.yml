@@ -32,61 +32,33 @@ layout:
     other: {order: 4}
 
 devices:
-  OAT01:
+  TT12-OAT:
     controller: SNC01
-    equipment: AHU01
+    equipment: AHU04
     description: Outside Air Temperature
-    template: AI_10K
-    wiring:
-      signal:
-        to: {point: UI1}
-        via: [X8-001A]
-        labels: [8-001A, 8-001A]
-      common:
-        to: {point: UI1}
-        via: [X8-002A]
-        labels: [8-002A, 8-002A]
+    template: AI_mA_2WIRE
 
-  OAT02:
-    controller: SNC01
-    equipment: AHU02
-    description: Outside Air Temperature
-    template: AI_10K
-    wiring:
-      signal:
-        to: {point: UI2}
-        via: [X8-001B]
-        labels: [8-001B, 8-001B]
-      common:
-        to: {terminal: X4-001}
-        via: [X4-001, X8-002B]
-        labels: [X4-001,48-001,8-002B]
-
-  DPT01:
-    controller: SNC01
-    equipment: AHU01
-    description: Duct Pressure Transmitter
-    template: AI_0_10V_3WIRE
     wiring:
       supply:
         to: {terminal: X3-001}
-        via: [X3-001,X8-003A]
-        labels: [3-001, 38-001, 8-003A]
+        via: [X8-001A]
+        labels: [38-001, 8-001A]
 
       signal:
-        to: {point: UI4}
-        # via: [X3-004, X4-003]
-        via: [X8-004A]
-        labels: [8-004A, 8-004A]
+        to: {point: UI1}
+        via: [X8-001B]
+        labels: [8-001B, 8-001B]
 
-      common:
-        to: {point: UI4}
-        via: [X8-004B]
-        labels: [8-004B, 8-004B]
+    # auxiliary_wiring:
+    #   common_ground:
+    #     from: {point: UI1, interface: common}
+    #     to: {terminal: X4-001}
+    #     labels: [X4-001]
 
-  OAT01:
+
+  TT12-OAT:
     controller: SNC01
-    equipment: AHU01
+    equipment: Cell 1
     description: Outside Air Temperature
     template: AI_mA_2WIRE
 
@@ -94,15 +66,75 @@ devices:
       supply:
         to: {terminal: X3-002}
         via: [X8-001A]
-        labels: [38-002, 8-001A]
+        labels: [38-001, 8-001A]
 
       signal:
-        to: {point: UI5}
-        via: [X8-002A]
-        labels: [8-002A, 8-002A]
+        to: {point: UI1}
+        via: [X8-001B]
+        labels: [8-001B, 8-001B]
 
     auxiliary_wiring:
       common_ground:
-        from: {point: UI5, interface: common}
-        to: {terminal: X4-002}
-      labels: [X4-002]
+        from: {point: UI1, interface: common}
+        to: {terminal: X4-002B}
+        labels: [X4-002]
+
+  # NT07-OAH:
+  #   controller: SNC01
+  #   equipment: AHU02
+  #   description: Outside Air Humidity
+  #   template: AI_10K
+  #   wiring:
+  #     signal:
+  #       to: {point: UI2}
+  #       via: [X8-001B]
+  #       labels: [8-001B, 8-001B]
+  #     common:
+  #       to: {terminal: X4-001}
+  #       via: [X4-001, X8-002B]
+  #       labels: [X4-001,48-001,8-002B]
+
+  # DPT01:
+  #   controller: SNC01
+  #   equipment: AHU01
+  #   description: Duct Pressure Transmitter
+  #   template: AI_0_10V_3WIRE
+  #   wiring:
+  #     supply:
+  #       to: {terminal: X3-001}
+  #       via: [X3-001,X8-003A]
+  #       labels: [3-001, 38-001, 8-003A]
+
+  #     signal:
+  #       to: {point: UI4}
+  #       # via: [X3-004, X4-003]
+  #       via: [X8-004A]
+  #       labels: [8-004A, 8-004A]
+
+  #     common:
+  #       to: {point: UI4}
+  #       via: [X8-004B]
+  #       labels: [8-004B, 8-004B]
+
+  # OAT04:
+  #   controller: SNC01
+  #   equipment: AHU04
+  #   description: Outside Air Temperature
+  #   template: AI_mA_2WIRE
+
+  #   wiring:
+  #     supply:
+  #       to: {terminal: X3-002}
+  #       via: [X8-005A]
+  #       labels: [38-002, 8-005A]
+
+  #     signal:
+  #       to: {point: UI5}
+  #       via: [X8-007A]
+  #       labels: [8-007A, 8-007A]
+
+  #   auxiliary_wiring:
+  #     common_ground:
+  #       from: {point: UI5, interface: common}
+  #       to: {terminal: X4-002}
+  #       labels: [X4-002]

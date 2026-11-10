@@ -9,14 +9,26 @@ controllers:
 layout:
   controller_origin: {x: 40, y: 80}
   point_pitch_y: 96
-  terminal_origin_x: 520
-  terminal_column_spacing: 80
-  field_device_x: 1080
-  field_device_pitch_y: 110
+
+  terminal_origin_x: 435
+  terminal_column_spacing: 210
+
+  field_device_x: 1228
+  field_device_pitch_y: 96
+
   terminal_blocks:
-    X4: {order: 1}
-    X3: {order: 2}
-    X2: {order: 3}
+    # Closest to Controler to furtherest Away
+
+    X3: {order: 1} # 24VDC Terminal Strip
+    X4: {order: 1} # 24VDC Terminal Strip Neutral 
+    
+    X5: {order: 2} # 24VAC Terminal Strip
+    X6: {order: 2} # 24VAC Terminal Strip Neutral 
+    
+    X7: {order: 3} # Digital IO Strip
+    X8: {order: 3} # Anologue IO Strip
+    
+    # Use below to show if the point is in an MSSB
     other: {order: 4}
 
 devices:
@@ -28,12 +40,12 @@ devices:
     wiring:
       signal:
         to: {point: UI1}
-        via: [X4-001]
-        labels: [4-001D, 4-001A]
+        via: [X8-001A]
+        labels: [8-001A, 8-001A]
       common:
         to: {point: UI1}
-        via: [X4-002]
-        labels: [4-002C, 4-002B]
+        via: [X8-002A]
+        labels: [8-002A, 8-002A]
 
   OAT02:
     controller: SNC01
@@ -43,27 +55,54 @@ devices:
     wiring:
       signal:
         to: {point: UI2}
-        via: [X4-003]
-        labels: [4-003D, 4-003A]
+        via: [X8-001B]
+        labels: [8-001B, 8-001B]
       common:
-        to: {point: UI2}
-        via: [X4-002]
-        labels: [4-002C, 4-002A]
+        to: {terminal: X4-001}
+        via: [X4-001, X8-002B]
+        labels: [X4-001,48-001,8-002B]
 
-  # DPT01:
-  #   controller: SNC01
-  #   equipment: AHU01
-  #   description: Duct Pressure Transmitter
-  #   template: AI_0_10V_3WIRE
-  #   wiring:
-  #     supply:
-  #       via: [X2-F010, X4-012]
-  #       labels: [4-010D, 4-010B, 4-010A]
-  #     signal:
-  #       to: {point: UI4}
-  #       via: [X2-F011, X4-003]
-  #       labels: [4-011D, 4-011B, 4-011A]
-  #     common:
-  #       to: {point: UI4}
-  #       via: [X2-F012, X4-002]
-  #       labels: [4-012D, 4-012B, 4-002A]
+  DPT01:
+    controller: SNC01
+    equipment: AHU01
+    description: Duct Pressure Transmitter
+    template: AI_0_10V_3WIRE
+    wiring:
+      supply:
+        to: {terminal: X3-001}
+        via: [X3-001,X8-003A]
+        labels: [3-001, 38-001, 8-003A]
+
+      signal:
+        to: {point: UI4}
+        # via: [X3-004, X4-003]
+        via: [X8-004A]
+        labels: [8-004A, 8-004A]
+
+      common:
+        to: {point: UI4}
+        via: [X8-004B]
+        labels: [8-004B, 8-004B]
+
+  OAT01:
+    controller: SNC01
+    equipment: AHU01
+    description: Outside Air Temperature
+    template: AI_mA_2WIRE
+
+    wiring:
+      supply:
+        to: {terminal: X3-002}
+        via: [X8-001A]
+        labels: [38-002, 8-001A]
+
+      signal:
+        to: {point: UI5}
+        via: [X8-002A]
+        labels: [8-002A, 8-002A]
+
+    auxiliary_wiring:
+      common_ground:
+        from: {point: UI5, interface: common}
+        to: {terminal: X4-002}
+      labels: [X4-002]

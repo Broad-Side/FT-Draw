@@ -318,8 +318,9 @@ def main():
                     if terminal_key not in terminals:
                         display_value = terminal_id
                         if not revision_marker_used:
-                            display_value = f'{terminal_id} [R{RENDERER_REVISION}]'
-                            revision_marker_used = True
+                            display_value = terminal_id
+                            # display_value = f'{terminal_id} [R{RENDERER_REVISION}]'
+                            # revision_marker_used = True
                         oid = add_terminal(out, terminal_id, x, row_y, display_value)
                         if not route_key:
                             element = get_element(out, oid)

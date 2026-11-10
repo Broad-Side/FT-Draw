@@ -1,0 +1,48 @@
+schema_version: 1
+
+device_template:
+  name: AI_mA_2WIRE
+  description: Two-wire loop-powered mA analog input
+  category: sensor
+
+  compatible_point_types:
+    - UI
+
+  drawing:
+    template: AI_mA_2WIRE.drawio
+    group_id: AI_mA_2WIRE
+    label_id: device_label
+
+    interfaces:
+      supply:
+        drawio_id: supply
+        label: "+"
+        interface_type: supply
+        role: loop_supply
+        required: true
+
+      signal:
+        drawio_id: signal
+        label: "-"
+        interface_type: signal
+        role: analog_signal
+        required: true
+
+  connections:
+    supply:
+      device_interface: supply
+      controller_interface: supply
+
+    signal:
+      device_interface: signal
+      controller_interface: signal
+
+  labels:
+    display:
+      - tag
+      - description
+
+  schedule:
+    type: Sensor
+    sensor_type: Two-wire mA analog input
+    units: NA

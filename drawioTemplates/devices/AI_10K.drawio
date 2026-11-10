@@ -1,6 +1,6 @@
 <mxfile host="Electron">
   <diagram name="Page-1" id="-lOCp7c1RY4N1GiOF-6k">
-    <mxGraphModel dx="309" dy="220" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1367" dy="1909" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -9,14 +9,14 @@
             <mxGeometry height="64" width="150" x="640" y="290" as="geometry" />
           </mxCell>
         </object>
+        <mxCell id="device_label" parent="AI_10K" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;" value="&lt;span style=&quot;font-family: &amp;quot;Courier New&amp;quot;;&quot;&gt;AI_10K&lt;/span&gt;" vertex="1">
+          <mxGeometry height="64" width="120" x="30" as="geometry" />
+        </mxCell>
         <object label="+" interface_type="signal" object_type="interface" id="signal">
           <mxCell parent="AI_10K" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;points=[[0,0.5,1,0,0]];" vertex="1">
             <mxGeometry height="32" width="30" as="geometry" />
           </mxCell>
         </object>
-        <mxCell id="device_label" parent="AI_10K" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;font-family: &amp;quot;Courier New&amp;quot;;&quot;&gt;AI_10K&lt;/span&gt;" vertex="1">
-          <mxGeometry height="64" width="120" x="30" as="geometry" />
-        </mxCell>
         <object label="-" interface_type="common" object_type="interface" id="common">
           <mxCell parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;points=[[0,0.5,1,0,0]];" vertex="1">
             <mxGeometry height="32" width="30" x="640" y="322" as="geometry" />

@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 import yaml
 
 EDGE_STYLE = 'edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;strokeWidth=2;jumpStyle=arc;'
-RENDERER_REVISION = 15
+RENDERER_REVISION = 16
 
 TEXT_STYLE = 'text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Courier New;fontSize=10;'
 

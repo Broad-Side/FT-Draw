@@ -8,13 +8,13 @@ controllers:
 
 layout:
   controller_origin: {x: 40, y: 80}
-  point_pitch_y: 96
+  # TBD point_pitch_y: 96
 
   terminal_origin_x: 435
   terminal_column_spacing: 210
 
   field_device_x: 1228
-  field_device_pitch_y: 96
+  # TBD field_device_pitch_y: 96
 
   terminal_blocks:
     # Closest to Controler to furtherest Away
@@ -31,53 +31,84 @@ layout:
     # Use below to show if the point is in an MSSB
     other: {order: 4}
 
-devices:
+points:
   TT12-OAT:
     controller: SNC01
     equipment: AHU04
     description: Outside Air Temperature
-    template: AI_mA_2WIRE
-
+    
     wiring:
+      signal:
+        to: {point: UI1}
+        via: [X8-001B]
+        labels: [8-001B, 8-001B]
+        fieldside_label: SIG
+
+      common:
+        from: {point: UI1, interface: common}
+        to: {terminal: X8-002A}
+        labels: [X8-002]
+
+
       supply:
         to: {terminal: X3-001}
         via: [X8-001A]
         labels: [38-001, 8-001A]
+        fieldside_label: +
 
-      signal:
-        to: {point: UI1}
-        via: [X8-001B]
-        labels: [8-001B, 8-001B]
+      # auxiliary_wiring:
+      #   common_ground:
+      #     from: {point: UI2, interface: common}
+      #     to: {terminal: X8-002B}
+      #     labels: [X8-002]
+
+
+
+  # NT07-OAH:
+  #   controller: SNC01
+  #   equipment: Cell 1
+  #   description: Outside Air Humidity
+  #   template: AI_mA_2WIRE
+
+  #   wiring:
+  #     supply:
+  #       to: {terminal: X3-003}
+  #       via: [X8-003A]
+  #       labels: [38-003, 8-003A]
+
+  #     signal:
+  #       to: {point: UI2}
+  #       via: [X8-003B]
+  #       labels: [8-003B, 8-003B]
 
     # auxiliary_wiring:
     #   common_ground:
-    #     from: {point: UI1, interface: common}
-    #     to: {terminal: X4-001}
-    #     labels: [X4-001]
+    #     from: {point: UI2, interface: common}
+    #     to: {terminal: X8-002B}
+    #     labels: [X8-002]
 
+  # TT12-OAT:
+  #   controller: SNC01
+  #   equipment: Cell 1
+  #   description: Outside Air Humidity
+  #   template: AI_mA_2WIRE
 
-  TT12-OAT:
-    controller: SNC01
-    equipment: Cell 1
-    description: Outside Air Temperature
-    template: AI_mA_2WIRE
+  #   wiring:
+  #     supply:
+  #       to: {terminal: X3-002}
+  #       via: [X8-001A]
+  #       labels: [38-001, 8-001A]
 
-    wiring:
-      supply:
-        to: {terminal: X3-002}
-        via: [X8-001A]
-        labels: [38-001, 8-001A]
+  #     signal:
+  #       to: {point: UI2}
+  #       via: [X8-001B]
+  #       labels: [8-001B, 8-001B]
 
-      signal:
-        to: {point: UI1}
-        via: [X8-001B]
-        labels: [8-001B, 8-001B]
-
-    auxiliary_wiring:
-      common_ground:
-        from: {point: UI1, interface: common}
-        to: {terminal: X4-002B}
-        labels: [X4-002]
+  #   auxiliary_wiring:
+  #     common_ground:
+  #       from: {point: UI2, interface: common}
+  #       to: {terminal: X4-002B}
+  #       labels: [X4-002]
 
   # NT07-OAH:
   #   controller: SNC01

@@ -20,24 +20,71 @@ layout:
 
   field_device_x: 1228
 
-  terminal_blocks:
-    # Closest to controller to furthest away.
+  terminal_block_info:
+    X3: 
+      label: 24 VDC
+      type: single
+      color: red
+      commons: []
+      reversed: false #false, when drawn X3 terminals are drawn on the left hand side, true they are drawn on the left
 
-    X3: {order: 1}  # 24 VDC terminal strip
-    X4: {order: 1}  # 24 VDC common terminal strip
+    X4: 
+      label: 24 VDC Common
+      type: single
+      color: black
+      reversed: false
+      commons: []
 
-    X5: {order: 2}  # 24 VAC terminal strip
-    X6: {order: 2}  # 24 VAC common terminal strip
+    X5: 
+      label: 24 VAC
+      type: single
+      color: grey
+      reversed: false
+      commons: []
 
-    X7: {order: 3}  # Digital I/O terminal strip
-    X8: {order: 3}  # Analog I/O terminal strip
+    X6: 
+      label: 24 VAC Common
+      type: single
+      color: grey
+      reversed: false
+      commons: []
+    
+    X7: 
+      label: "IO"
+      type: double
+      color: grey
+      reversed: true
+      commons: []
 
-    other: {order: 4}  # MSSB or other terminals
+    X8: 
+      label: "IO"
+      type: double
+      color: grey
+      reversed: true
+      commons: [X8-002, X8-005, X8-006] # Common bar added in double or triple stack terminals to make them all the same potential.
+    # Below comments for AI to undertand changes and build new terminal drawing. 
+    # X8: {type: double, color: grey, commons: [X8-002, X8-005, X8-006]}
+    # X8: {type: triple, color: grey, commons: [X8-002, X8-005, X8-006]}
+    # X8: {type: fuse, color: black}
+
+    terminal_blocks_order:
+      # Closest to controller to furthest away.
+      # I have not added this to the above section, but it is easier to visualize the order of the terminal blocks in the drawing if they are listed here.
+      X3: {order: 1}  # 24 VDC terminal strip
+      X4: {order: 1}  # 24 VDC common terminal strip
+
+      X5: {order: 2}  # 24 VAC terminal strip
+      X6: {order: 2}  # 24 VAC common terminal strip
+
+      X7: {order: 3}  # Digital I/O terminal strip
+      X8: {order: 3}  # Analog I/O terminal strip
+
+      other: {order: 4}  # MSSB or other terminals
 
 points:
   TT12-OAT:
     controller: SNC01
-    equipment: AHU04
+    equipment: AHU01
     description: Outside Air Temperature
 
     controller_point:
@@ -45,6 +92,49 @@ points:
 
     field_device:
       label: TT12-OAT
+      interfaces:
+        signal:
+          order: 1
+          label: SIG
+        supply:
+          order: 2
+          label: "+"
+
+    wiring:
+      signal:
+        from: {point: UI1, interface: signal}
+        via: [X8-001B]
+        labels: [8-001B, 8-001B]
+        to: {field_interface: signal}
+
+      supply:
+        from: {terminal: X3-001}
+        via: [X8-001A]
+        labels: [38-001, 8-001A]
+        to: {field_interface: supply}
+
+      common_ground:
+        from: {point: UI1, interface: common}
+        via: []
+        labels: [X8-002]
+        to: {terminal: X8-002A}
+
+      common_ground_mk2:
+        from: {terminal: X8-002B}
+        via: []
+        labels: [48-001]
+        to: {terminal: X4-001}
+
+  TT13-OAT:
+    controller: SNC01
+    equipment: AHU02
+    description: Outside Air Temperature
+
+    controller_point:
+      point: UI2
+
+    field_device:
+      label: TT13-OAT
 
       interfaces:
         signal:
@@ -57,19 +147,99 @@ points:
 
     wiring:
       signal:
-        from: {point: UI1, interface: signal}
-        via: [X8-001B]
-        labels: [8-001B, 8-001B]
+        from: {point: UI2, interface: signal}
+        via: [X8-003B]
+        labels: [8-003B, 8-003B]
         to: {field_interface: signal}
 
-      common_ground:
-        from: {point: UI1, interface: common}
-        via: []
-        labels: [X8-002]
-        to: {terminal: X8-002A}
+      supply:
+        from: {terminal: X3-002}
+        via: [X8-003A]
+        labels: [38-002, 8-003A]
+        to: {field_interface: supply}
+
+  TT14-OAT:
+    controller: SNC01
+    equipment: AHU03
+    description: Outside Air Temperature
+
+    controller_point:
+      point: UI3
+
+    field_device:
+      label: TT14-OAT
+      interfaces:
+        signal:
+          order: 1
+          label: SIG
+        supply:
+          order: 2
+          label: "+"
+
+    wiring:
+      signal:
+        from: {point: UI3, interface: signal}
+        via: [X8-004B]
+        labels: [8-004B, 8-004B]
+        to: {field_interface: signal}
 
       supply:
-        from: {terminal: X3-001}
-        via: [X8-001A]
-        labels: [38-001, 8-001A]
+        from: {terminal: X3-003}
+        via: [X8-004A]
+        labels: [38-003, 8-004A]
         to: {field_interface: supply}
+
+      common_ground:
+        from: {point: UI3, interface: common}
+        via: []
+        labels: [X8-005]
+        to: {terminal: X8-005A}
+
+      common_ground_mk2:
+        from: {terminal: X8-005B}
+        via: []
+        labels: [48-002]
+        to: {terminal: X4-002}
+
+  TT15-OAT:
+    controller: SNC01
+    equipment: AHU04
+    description: Outside Air Temperature
+
+    controller_point:
+      point: UI4
+
+    field_device:
+      label: TT15-OAT
+      interfaces:
+        signal:
+          order: 1
+          label: SIG
+        supply:
+          order: 2
+          label: "+"
+
+    wiring:
+      signal:
+        from: {point: UI4, interface: signal}
+        via: [X8-007B]
+        labels: [8-007B, 8-007B]
+        to: {field_interface: signal}
+
+      supply:
+        from: {terminal: X3-004}
+        via: [X8-007A]
+        labels: [38-004, 8-007A]
+        to: {field_interface: supply}
+
+      # common_ground:
+      #   from: {point: UI4, interface: common}
+      #   via: []
+      #   labels: [X8-005]
+      #   to: {terminal: X8-005A}
+
+      # common_ground_mk2:
+      #   from: {terminal: X8-009B}
+      #   via: []
+      #   labels: [48-002]
+      #   to: {terminal: X4-002}

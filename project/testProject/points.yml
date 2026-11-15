@@ -61,7 +61,7 @@ layout:
       type: double
       color: grey
       reversed: true
-      commons: [X8-002, X8-005, X8-006] # Common bar added in double or triple stack terminals to make them all the same potential.
+      commons: [X8-002, X8-005, X8-006, X8-010] # Common bar added in double or triple stack terminals to make them all the same potential.
     # Below comments for AI to undertand changes and build new terminal drawing. 
     # X8: {type: double, color: grey, commons: [X8-002, X8-005, X8-006]}
     # X8: {type: triple, color: grey, commons: [X8-002, X8-005, X8-006]}
@@ -176,6 +176,7 @@ points:
           order: 2
           label: "+"
 
+
     wiring:
       signal:
         from: {point: UI3, interface: signal}
@@ -219,6 +220,7 @@ points:
           order: 2
           label: "+"
 
+
     wiring:
       signal:
         from: {point: UI4, interface: signal}
@@ -243,3 +245,56 @@ points:
       #   via: []
       #   labels: [48-002]
       #   to: {terminal: X4-002}
+
+  PT01-SRP-OAT:
+    controller: SNC01
+    equipment: AHU01
+    description: Outside Air Temperature
+
+    controller_point:
+      point: UI5
+
+    field_device:
+      label: PT01-SRP-OAT
+      interfaces:
+        signal:
+          order: 1
+          label: SIG
+        signal_common:
+          order: 2
+          label: GND
+        supply:
+          order: 3
+          label: 24v
+        common:
+          order: 4
+          label: COM
+
+    wiring:
+      signal:
+        from: {point: UI5, interface: signal}
+        via: [X8-009B]
+        labels: [8-009B, 8-009B]
+        to: {field_interface: signal}
+
+      supply:
+        from: {terminal: X3-008}
+        via: []
+        labels: [3-001A]
+        to: {field_interface: supply}
+
+      signal_common:
+        from: {point: UI5, interface: common}
+        via: [X8-010B]
+        labels: [X8-010B,X8-010B]
+        to: {field_interface: signal_common}
+
+      common:
+        from: {terminal: X4-003}
+        via: []
+        labels: [X4-003]
+        to: {field_interface: common}
+
+
+
+  

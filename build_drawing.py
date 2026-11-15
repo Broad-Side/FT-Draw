@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import html
 import re
 import sys
 from copy import deepcopy
@@ -162,14 +163,119 @@ class Box:
         return self.x + self.w
 
 
+def _plain(label: str) -> str:
+    """Visible text of a draw.io HTML label."""
+    return html.unescape(re.sub(r"<[^>]+>", "", label or "")).replace("\xa0", " ").strip()
+
+
+TEXT_SUFFIX = "_text"   # Client -> the box with id Client_text holds the value
+
+# revHistory.csv column -> background cell id of that column in the history row
+REV_HISTORY_IDS = {
+    "Rev": "Rev_Number_History",
+    "Date": "Rev_Date_History",
+    "Description": "Rev_Description_History",
+    "Reviewer": "Rev_Checked_History",
+}
+
+
+def fill_title_block(elements: list, fields: dict) -> list[str]:
+    """Write each field into the background box with id <field>_text, e.g.
+    projectDetails.yml "Client: MSFT" -> the box Client_text. The value
+    replaces the box's placeholder text, so its font size and bold are kept.
+    Returns the fields that had no such box."""
+    by_id = {el.get("id"): el for el in elements}
+    missing = []
+    for key, value in fields.items():
+        target = by_id.get(key + TEXT_SUFFIX)
+        if target is None:
+            missing.append(key)
+        elif value is not None:
+            set_text(target, value)
+    return missing
+
+
+def set_text(el, value) -> None:
+    """Replace a cell's visible text, keeping its font tags (size, bold)."""
+    attr = "label" if el.tag == "object" else "value"
+    old = el.get(attr) or ""
+    new = html.escape(str(value), quote=False)
+    if _plain(old):
+        parts = re.split(r"(<[^>]*>)", old)
+        i = next(i for i, p in enumerate(parts) if not p.startswith("<") and p.strip())
+        parts[i] = new
+        el.set(attr, "".join(parts))
+    else:
+        el.set(attr, new)
+
+
+def _geo(el):
+    cell = el if el.tag == "mxCell" else el.find("mxCell")
+    return cell.find("mxGeometry") if cell is not None else None
+
+
+def fill_rev_history(elements: list, revisions: list) -> tuple[list, list[str]]:
+    """Draw one revision history row per revision, newest at the top.
+
+    The template row is the cells named in REV_HISTORY_IDS. The oldest
+    revision goes in that row; each newer one is a copy drawn one row higher
+    (row height = Rev_Number_History's height), so the list grows up the page.
+    Returns the new element list and any REV_HISTORY_IDS cells not found."""
+    by_id = {el.get("id"): el for el in elements}
+    missing = [i for i in REV_HISTORY_IDS.values() if i not in by_id]
+    row = {col: by_id[i] for col, i in REV_HISTORY_IDS.items() if i in by_id}
+    if not row or not revisions:
+        return elements, missing
+    first = row.get("Rev", next(iter(row.values())))
+    row_h = float(_geo(first).get("height", 18))
+    at = min(elements.index(el) for el in row.values())
+    out = [el for el in elements if not any(el is r for r in row.values())]
+    new_cells = []
+    for n, rev in enumerate(revisions):            # n = 0 oldest, bottom row
+        for col, tpl in row.items():
+            el = deepcopy(tpl)
+            if n:
+                el.set("id", f"{tpl.get('id')}_rev{n}")
+            geo = _geo(el)
+            geo.set("y", num(float(geo.get("y", 0)) - n * row_h))
+            set_text(el, rev.get(col, ""))
+            new_cells.append(el)
+    return out[:at] + new_cells + out[at:], missing
+
+
+def load_revisions(path: Path) -> list[dict]:
+    """revHistory.csv rows (Rev, Date, Description, Drafter, Reviewer) in file
+    order - add each new revision as the last line. Dates are shown as DD/MM/YY like the title block template;
+    YYYY-MM-DD and YY-MM-DD are both accepted."""
+    import csv
+    with open(path, newline="", encoding="utf-8-sig") as f:
+        rows = [{(k or "").strip(): (v or "").strip() for k, v in r.items()}
+                for r in csv.DictReader(f)]
+    rows = [r for r in rows if any(r.values())]
+    for r in rows:
+        m = re.fullmatch(r"(\d{2}|\d{4})-(\d{1,2})-(\d{1,2})", r.get("Date", ""))
+        if m:
+            r["Date"] = f"{int(m[3]):02d}/{int(m[2]):02d}/{m[1][-2:]}"
+    return rows
+
+
 class Drawing:
-    def __init__(self, name: str, page_w: int = 1654, page_h: int = 1169):
+    def __init__(self, name: str, page_w: int = 1654, page_h: int = 1169,
+                 title_fields: dict | None = None, revisions: list | None = None):
         self.mxfile = ET.Element("mxfile", {"host": "Electron"})
+        # Title block values (projectDetails.yml), keyed by background cell id.
+        self.title_fields = dict(title_fields or {})
+        # revHistory.csv rows, oldest first.
+        self.revisions = list(revisions or [])
+        self.warned_background = False
         self.add_page(name, page_w, page_h)
 
-    def add_page(self, name: str, page_w: int = 1654, page_h: int = 1169):
+    def add_page(self, name: str, page_w: int = 1654, page_h: int = 1169,
+                 drawing_name: str | None = None):
         """Start a new page (tab) in the same file. Everything drawn after
-        this goes onto the new page."""
+        this goes onto the new page. drawing_name is what the title block's
+        Drawing Name box shows; default is the page name."""
+        self.page_name = drawing_name or name
         diagram = ET.SubElement(self.mxfile, "diagram", {"name": name, "id": safe_id("ft_draw", name)})
         self.model = model = ET.SubElement(diagram, "mxGraphModel", {
             "dx": "1200", "dy": "900", "grid": "1", "gridSize": "8", "guides": "1",
@@ -233,7 +339,20 @@ class Drawing:
         # In draw.io the first layer in the file is the bottom one.
         bg_layer = "background_layer"
         self.ids.add(bg_layer)
-        incoming = [el for el in src_root if el.get("id") not in ("0", "1")]
+        incoming = [deepcopy(el) for el in src_root if el.get("id") not in ("0", "1")]
+        fields = {"Drawing_Name": self.page_name, **self.title_fields}
+        if self.revisions:
+            latest = self.revisions[-1]
+            fields.setdefault("Rev_Number", latest["Rev"])
+            fields.setdefault("Rev_Details", latest["Description"])
+        missing = [f"{k}{TEXT_SUFFIX}" for k in fill_title_block(incoming, fields)]
+        incoming, no_rev = fill_rev_history(incoming, self.revisions)
+        if self.revisions:
+            missing += no_rev
+        if missing and not self.warned_background:     # once, not per page
+            print(f"NOTE: {path.name} has no cell with id {', '.join(missing)} - "
+                  "those values are not shown", file=sys.stderr)
+        self.warned_background = True
         renamed = {}
         for el in incoming:
             old = el.get("id")
@@ -246,7 +365,6 @@ class Drawing:
         self.root.insert(insert_at, layer)
         insert_at += 1
         for el in incoming:
-            el = deepcopy(el)
             el.set("id", renamed[el.get("id")])
             cell = el if el.tag == "mxCell" else el.find("mxCell")
             if cell is not None:
@@ -456,9 +574,11 @@ def validate(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
 # Rendering
 # --------------------------------------------------------------------------
 def render(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
-           background: Path | None = None) -> Drawing:
+           background: Path | None = None, title_fields: dict | None = None,
+           revisions: list | None = None) -> Drawing:
     first = next(iter(controllers.values()))
-    dwg = Drawing(first.get("drawing_name", "Field Connections"))
+    dwg = Drawing(first.get("drawing_name", "Field Connections"),
+                  title_fields=title_fields, revisions=revisions)
     if background:
         dwg.add_background(background)
     terminals: dict[str, Box] = {}      # shared across the whole drawing
@@ -621,8 +741,9 @@ def render(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
 # triple = A, B and C. Blocks that share a terminal_blocks_order and have
 # 3 columns or fewer between them share a page (X3 + X4, X5 + X6).
 #
-# Every terminal is listed in number order with each panel wire on it (wires
-# out to field devices are left off). A terminal with two or more wires is
+# Every terminal is listed in number order with each panel wire on it. Wires
+# out to field devices are left off, unless the terminal has no panel wire
+# (then the field wire is shown, e.g. X3-008 -> PT01-SRP-OAT-(24v)). A terminal with two or more wires is
 # drawn taller so each wire lands on it:
 #   normal:         [X4-001] ---- 48-001 ---- [X8-002B]   (strip terminal left)
 #   reversed: true: [X8-001A] ---- 38-001 ---- [X3-001]   (strip terminal right)
@@ -674,19 +795,25 @@ def terminal_style(layout: Layout, terminal: str) -> str:
 def plan_strips(segments: list[tuple], layout: Layout) -> list[dict]:
     """Work out which strips to draw, their levels, terminals and wires."""
     used: dict[str, dict] = {}     # block -> {terminal name: [(other end, label)]}
+    field: dict[str, dict] = {}    # same, wires out to field devices only
     for a, b, lbl in segments:
         for me, other in ((a, b), (b, a)):
             if me[0] != "terminal":
                 continue
-            if other[0] == "field":
-                # Field wiring isn't shown on the strip pages, only panel wiring.
-                continue
             t = str(me[1]).upper()
             if not TERMINAL_RE.match(t):
-                print(f"NOTE: {me[1]} isn't in BLOCK-NUMBER form, left off the terminal strip pages",
-                      file=sys.stderr)
+                if other[0] != "field":
+                    print(f"NOTE: {me[1]} isn't in BLOCK-NUMBER form, left off the terminal strip pages",
+                          file=sys.stderr)
                 continue
-            used.setdefault(TERMINAL_RE.match(t)["block"], {}).setdefault(me[1], []).append((other, lbl))
+            target = field if other[0] == "field" else used
+            target.setdefault(TERMINAL_RE.match(t)["block"], {}).setdefault(me[1], []).append((other, lbl))
+    # Field wiring is only shown on a terminal with no panel wiring, e.g. an
+    # X3 supply wired straight to the device - otherwise it would be missing.
+    for block, terms in field.items():
+        for t, conns in terms.items():
+            if not used.get(block, {}).get(t):
+                used.setdefault(block, {})[t] = conns
 
     strips = []
     for block in sorted(used, key=lambda b: (layout.block_order.get(b, 99), b)):
@@ -749,6 +876,8 @@ def render_strips(dwg: Drawing, segments: list[tuple], layout: Layout,
         total_w = (len(cols) - 1) * STRIP_GROUP_W + STRIP_COL_W
         x_left = (area_l + area_r) / 2 - total_w / 2
         base = "Terminal Strip " + " / ".join(st["name"] for st in group)
+        # Title block Drawing Name: blocks only, e.g. "Terminal Strip X3 / X4"
+        short = "Terminal Strip " + " / ".join(st["block"] for st in group)
         n_numbers = max(len(st["rows"]) for st in group)
 
         part, y, bottom = 0, None, page_h - 40
@@ -758,8 +887,9 @@ def render_strips(dwg: Drawing, segments: list[tuple], layout: Layout,
             height = (n_rows - 1) * STRIP_ROW + TERM_H
             if y is None or y + height > bottom:      # start a (continuation) page
                 part += 1
-                title = base + (f" ({part})" if part > 1 else "")
-                dwg.add_page(title)
+                suffix = f" ({part})" if part > 1 else ""
+                title = base + suffix
+                dwg.add_page(title, drawing_name=short + suffix)
                 pages += 1
                 if background:
                     dwg.add_background(background)
@@ -826,6 +956,10 @@ def main() -> int:
                     help="background .drawio (title block/border). Default: "
                          "layout.background in points.yml, else backgroundTemplates/Background.drawio")
     ap.add_argument("--no-background", action="store_true", help="draw without a background")
+    ap.add_argument("--project-details", type=Path,
+                    help="title block values. Default: projectDetails.yml next to points.yml")
+    ap.add_argument("--rev-history", type=Path,
+                    help="revision history CSV. Default: revHistory.csv next to points.yml")
     ap.add_argument("--no-terminal-strips", action="store_true",
                     help="only draw the points page, no terminal strip pages")
     a = ap.parse_args()
@@ -863,7 +997,24 @@ def main() -> int:
         if background and not background.is_file():
             raise ConfigError(f"background file not found: {background}")
 
-    dwg = render(points, controllers, ctrl_points, layout, background)
+    title_fields = {}
+    details = a.project_details or a.points.parent / "projectDetails.yml"
+    if details.is_file():
+        raw = load_yaml(details)
+        # Keys may sit under a top-level "Project:" section or at the top level.
+        section = raw.get("Project") if isinstance(raw.get("Project"), dict) else raw
+        title_fields = {str(k): v for k, v in section.items() if not isinstance(v, (dict, list))}
+    elif a.project_details:
+        raise ConfigError(f"project details file not found: {details}")
+
+    revisions = []
+    rev_file = a.rev_history or a.points.parent / "revHistory.csv"
+    if rev_file.is_file():
+        revisions = load_revisions(rev_file)
+    elif a.rev_history:
+        raise ConfigError(f"revision history file not found: {rev_file}")
+
+    dwg = render(points, controllers, ctrl_points, layout, background, title_fields, revisions)
     strip_pages = 0
     if not a.no_terminal_strips:
         strip_pages = render_strips(dwg, wire_segments(points, ctrl_points), layout, background)

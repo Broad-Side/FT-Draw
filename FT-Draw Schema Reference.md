@@ -199,6 +199,49 @@ Rows are chosen by the builder, so the order routes are written in `points.yml` 
 
 Wire labels sit on their own wire, halfway between the two boxes it joins.
 
+## projectDetails.yml: title block
+
+Optional. Read from next to `points.yml`, or from the file given with `--project-details`. On every page, each value is written into the background box whose draw.io id is the key plus `_text`.
+
+```yaml
+Project:
+  Project: SYD05        # -> box Project_text
+  Client: MSFT          # -> box Client_text
+  Drawing_Set: SYD08.COLO1.CE1
+  Designer: Dean Furley
+```
+
+- Keys may sit under `Project:` or at the top level. Key names are your own. To add a field, give its value box the id `<key>_text` (in draw.io: select the box, Edit Data, ID).
+- Only the box with that exact id is filled. The group around it and the small caption ("Client:") are not read, so name them as you like (by convention the group is the key, e.g. `Client`).
+- The value replaces the box's placeholder text and keeps its font size and bold.
+- `Drawing_Name_text` gets the page name (e.g. `SNC01 - UI Connections`) unless `projectDetails.yml` sets `Drawing_Name`. On terminal strip pages it is the short form, blocks only: `Terminal Strip X3 / X4`, `Terminal Strip X8`. The page tab and the heading at the top of the page keep the full name (`Terminal Strip X8 - IO`).
+- A value with no matching box gives one NOTE listing the missing ids, and is left off.
+
+### Background box ids
+
+| Box id | Filled with |
+| --- | --- |
+| `Project_text`, `Client_text`, `Vendor_text`, `Drafter_Company_text`, `Drawing_Set_text`, `Designer_text`, `Drafter_text`, `Checked_text` | Same-named key in `projectDetails.yml` |
+| `Drawing_Name_text` | Page name |
+| `Rev_Number_text`, `Rev_Details_text` | Rev and Description of the last line of `revHistory.csv` |
+| `Rev_Number_History`, `Rev_Date_History`, `Rev_Description_History`, `Rev_Checked_History` | Revision history row: Rev, Date, Description, Reviewer |
+
+The history ids are set in `REV_HISTORY_IDS` and the `_text` suffix in `TEXT_SUFFIX`, both near the top of `build_drawing.py`.
+
+## revHistory.csv: revisions
+
+Optional. Read from next to `points.yml`, or from the file given with `--rev-history`. Add each new revision as the last line.
+
+```csv
+Rev,Date,Description,Drafter,Reviewer
+1,2026-11-05,for review,DF,DF
+2,2026-11-06,issued for construction,DF,RF
+```
+
+- The last line fills `Rev_Number_text` and `Rev_Details_text` (unless `projectDetails.yml` sets `Rev_Number` / `Rev_Details`).
+- Every line gets a row in the revision history table, newest at the top. The four `*_History` boxes are the template row, and the oldest revision goes in it (just above the REV / DATE header). Each newer revision is a copy of that row, drawn one row higher (by the height of `Rev_Number_History`), so the list grows up the page.
+- Dates written `YYYY-MM-DD` or `YY-MM-DD` are shown as `DD/MM/YY`. Anything else is shown as written.
+
 ## Errors, warnings and notes
 
 An ERROR stops the build and writes no drawing (exit code 2). A WARNING or NOTE is printed and the drawing is still made. Messages name the point and route, e.g. `TT12-OAT.wiring.signal`.

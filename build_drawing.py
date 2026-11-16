@@ -302,14 +302,14 @@ class Drawing:
         return Box(id_, x, y, w, h)
 
     def wire(self, a: Box, b: Box, route_key: str, bend_x: float | None = None,
-             entry_y: float = 0.5, exit_y: float = 0.5):
+             entry_y: float = 0.5, exit_y: float = 0.5, extra_style: str = ""):
         """Wire a -> b. If bend_x is given and the two ends are on different
         rows, the vertical part of the wire is placed at x = bend_x.
         entry_y is where on b's left edge the wire lands (0 top, 1 bottom)."""
         id_ = hash_id("edge", route_key, a.id, b.id)
         self.ids.add(id_)
         style = (EDGE_STYLE.replace("entryY=0.5", f"entryY={entry_y:.4g}")
-                 .replace("exitY=0.5", f"exitY={exit_y:.4g}"))
+                 .replace("exitY=0.5", f"exitY={exit_y:.4g}")) + extra_style
         cell = ET.SubElement(self.root, "mxCell", {
             "id": id_, "parent": "1", "edge": "1", "source": a.id, "target": b.id,
             "value": "", "style": style,
@@ -463,6 +463,14 @@ class Layout:
         commons = {str(c).upper() for c in (self.block_info.get(m["block"], {}).get("commons") or [])}
         return f"{m['block']}-{m['num']}{m['level']}" in commons or f"{m['block']}-{m['num']}" in commons
 
+    def is_earth(self, terminal: str) -> bool:
+        """True if the terminal's block has earth: true (e.g. X0)."""
+        return bool(self.block_info.get(terminal_block(terminal), {}).get("earth"))
+
+    def earth_stroke(self, terminal: str) -> str:
+        colour = str(self.block_info.get(terminal_block(terminal), {}).get("color", "")).lower()
+        return COLOURS.get(colour, (colour,))[0] if colour else "#60A917"
+
 
 # --------------------------------------------------------------------------
 # Validation
@@ -597,8 +605,10 @@ def validate(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
             src, dst = r["from"], r["to"]
             if set(src) not in ({"point", "interface"}, {"terminal"}):
                 raise ConfigError(f"{where}: from must be {{point, interface}} or {{terminal}}")
-            if set(dst) not in ({"field_interface"}, {"terminal"}):
-                raise ConfigError(f"{where}: to must be {{field_interface}} or {{terminal}}")
+            if set(dst) not in ({"field_interface"}, {"terminal"}, {"cut_back"}):
+                raise ConfigError(f"{where}: to must be {{field_interface}}, {{terminal}} or {{cut_back: true}}")
+            if "cut_back" in dst and dst["cut_back"] is not True:
+                raise ConfigError(f"{where}: cut_back must be true")
             if "point" in src:
                 spoint = src["point"]
                 if spoint not in ctrl_points[ctrl]:
@@ -624,7 +634,7 @@ def validate(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
                 c = r["cable"]
                 if not isinstance(c, dict) or set(c) != {"tag", "core"}:
                     raise ConfigError(f"{where}: cable must be {{tag, core}}, e.g. {{tag: CF-8-1, core: 1-white}}")
-                if "field_interface" not in dst:
+                if "terminal" in dst:
                     raise ConfigError(f"{where}: cable is for the wire out to the field device, "
                                       "but this route ends on a panel terminal")
                 tag_, core = str(c["tag"]), str(c["core"])
@@ -637,6 +647,16 @@ def validate(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
                 if (tag_, core) in cores_used:
                     raise ConfigError(f"{where}: core {core} of {tag_} is already used by {cores_used[(tag_, core)]}")
                 cores_used[(tag_, core)] = where
+                if core == "screen":
+                    if "cut_back" not in dst:
+                        raise ConfigError(f"{where}: a screen is earthed at the panel only, "
+                                          "so the route must end with to: {cut_back: true}")
+                    if "terminal" not in src or not layout.is_earth(src["terminal"]):
+                        raise ConfigError(f"{where}: a screen must start on an earth terminal "
+                                          "(a block with earth: true in terminal_block_info)")
+            if "cut_back" in dst and (r.get("cable") or {}).get("core") != "screen":
+                raise ConfigError(f"{where}: to: {{cut_back: true}} is for cable screens; "
+                                  "add cable: {tag: ..., core: screen}")
 
             terms = route_terminals(r)
             orders = [layout.order(t) for t in terms]
@@ -648,9 +668,12 @@ def validate(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
                     raise ConfigError(msg + "\n  (re-run with --ignore-terminal-order to draw anyway)")
                 print("WARNING: " + msg, file=sys.stderr)
 
-    for tag_ in cables:
+    for tag_, c in cables.items():
         if not any(t == tag_ for t, _ in cores_used):
             print(f"WARNING: cable {tag_} is in cables.yml but no wire uses it", file=sys.stderr)
+        elif "screen" in cable_types[str(c["type"])]["_cores"] and (tag_, "screen") not in cores_used:
+            print(f"WARNING: cable {tag_} has a screen but no wire earths it "
+                  "(add a route with cable: {tag: ..., core: screen})", file=sys.stderr)
 
 
 # --------------------------------------------------------------------------
@@ -658,6 +681,15 @@ def validate(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
 # --------------------------------------------------------------------------
 CABLE_FONT_PX = 6   # cable tag / core text under the wire label
 CABLE_DY = 11       # offset from the wire label's top
+# A cut-back screen always ends at the same place, whatever column its earth
+# terminal is in: the tick sits CUT_BACK_FROM_FIELD left of the field device,
+# with its labels centred CUT_BACK_LABEL_DX left of the tick (in line with
+# the field-wire labels from the IO column).
+CUT_BACK_FROM_FIELD = 106
+CUT_BACK_LABEL_DX = 50.5
+CUT_BACK_GAP = 8    # fallback: tick this far past the labels when the earth
+                    # terminal is too far right for the fixed position
+CUT_BACK_W, CUT_BACK_H = 2, 12   # the end tick
 
 
 def render(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
@@ -742,21 +774,29 @@ def render(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
             src, dst = r["from"], r["to"]
             sbox = start_box(src)
             x0 = sbox.x if sbox else L.terminal_x(src["terminal"])
-            x1 = L.field_x if "field_interface" in dst else L.terminal_x(dst["terminal"]) + TERM_W
+            x1 = (L.field_x if "terminal" not in dst else L.terminal_x(dst["terminal"]) + TERM_W)
             prefer = None
             if "point" in src and sbox is not None:
                 prefer = row_of(sbox)
             elif "field_interface" in dst:
                 prefer = row_of(field_conn[dst["field_interface"]])
-            # controller routes are placed first, then the rest, each in yml order
+            # Placed in this order, each group in yml order: controller routes,
+            # then other routes out to the field (screens included), then
+            # panel-to-panel links, which fit in wherever is left.
             plans.append({"name": rname, "r": r, "span": (x0, x1), "prefer": prefer,
-                          "rank": (0 if "point" in src else 1, idx)})
+                          "rank": (0 if "point" in src else 1 if "terminal" not in dst else 2, idx)})
 
         taken: dict[int, list[tuple]] = {}     # row -> spans already used on it
         def free(row: int, span: tuple) -> bool:
             return all(span[1] <= a or span[0] >= b for a, b in taken.get(row, []))
 
         for plan in sorted(plans, key=lambda pl: pl["rank"]):
+            cable = plan["r"].get("cable") or {}
+            if cable.get("core") == "screen":
+                # A screen goes on the row just under its cable's other cores.
+                rows = [pl["row"] for pl in plans if "row" in pl
+                        and (pl["r"].get("cable") or {}).get("tag") == cable.get("tag")]
+                plan["prefer"] = max(rows) + 1 if rows else None
             candidates = ([plan["prefer"]] if plan["prefer"] is not None else []) + list(range(len(wiring) * 2 + 2))
             row = next(c for c in candidates if free(c, plan["span"]))
             taken.setdefault(row, []).append(plan["span"])
@@ -771,7 +811,12 @@ def render(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
                 start = ("shared", ctrl, sc) if sc else ("point", ctrl, src["point"], src["interface"])
             else:
                 start = ("terminal", src["terminal"])
-            end = ("terminal", dst["terminal"]) if "terminal" in dst else ("field", tag, dst["field_interface"])
+            if "terminal" in dst:
+                end = ("terminal", dst["terminal"])
+            elif "cut_back" in dst:
+                end = ("cut_back", tag, rname)
+            else:
+                end = ("field", tag, dst["field_interface"])
             # Everything in points.yml is drawn. A route identical to an earlier
             # one is still drawn, but flagged in case it was entered by mistake.
             route_id = (start, tuple(r["via"]), tuple(map(str, r["labels"])), end)
@@ -788,13 +833,37 @@ def render(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
                     terminals[t] = dwg.box(safe_id("term", t), t, L.terminal_x(t),
                                            ry + (L.row_h - TERM_H) / 2, TERM_W, TERM_H,
                                            BOX + "fontSize=10;"
-                                           + (COMMON_STROKE if L.is_common(t) else ""))
+                                           + (COMMON_STROKE if L.is_common(t) else "")
+                                           + (f"strokeColor={L.earth_stroke(t)};strokeWidth=2;"
+                                              if L.is_earth(t) else ""))
                 return terminals[t]
 
             chain = [start_box(src) or term(src["terminal"])]
             chain += [term(t) for t in r["via"]]
-            chain.append(field_conn[dst["field_interface"]] if "field_interface" in dst
-                         else term(dst["terminal"]))
+            if "field_interface" in dst:
+                chain.append(field_conn[dst["field_interface"]])
+            elif "cut_back" in dst:
+                # Screen cut back and insulated at the device: a short tick
+                # at a fixed distance left of the field device, on this
+                # route's row (see CUT_BACK_FROM_FIELD).
+                last = chain[-1]
+                cut_x = L.field_x - CUT_BACK_FROM_FIELD
+                cut_label_mid = cut_x - CUT_BACK_LABEL_DX
+                if cut_label_mid - LABEL_W / 2 < last.right + CUT_BACK_GAP:
+                    # Earth terminal too far right: labels just after it instead.
+                    cut_label_mid = last.right + CUT_BACK_GAP + LABEL_W / 2
+                    cut_x = cut_label_mid + LABEL_W / 2 + CUT_BACK_GAP
+                chain.append(dwg.box(safe_id("cut", tag, rname), "",
+                                     cut_x, ry + (L.row_h - CUT_BACK_H) / 2,
+                                     CUT_BACK_W, CUT_BACK_H,
+                                     "rounded=0;html=1;fillColor=#000000;strokeColor=#000000;"))
+            else:
+                chain.append(term(dst["terminal"]))
+            is_screen = (r.get("cable") or {}).get("core") == "screen"
+            wire_style = (f"dashed=1;strokeColor={L.earth_stroke(src['terminal'])};"
+                          if is_screen else "")
+            field_end = chain[-1].id if "terminal" not in dst else None
+            cut_id = chain[-1].id if "cut_back" in dst else None
 
             for (a, b), text in zip(zip(chain, chain[1:]), r["labels"]):
                 if b.id in field_ids:
@@ -803,15 +872,15 @@ def render(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
                     bend = a.right + L.field_jog            # tight to the controller
                 else:
                     bend = None
-                dwg.wire(a, b, key, bend_x=bend)
-                mid = (a.right + b.x) / 2
+                dwg.wire(a, b, key, bend_x=bend, extra_style=wire_style)
+                mid = cut_label_mid if b.id == cut_id else (a.right + b.x) / 2
                 ya, yb = a.y + a.h / 2, b.y + b.h / 2
                 # Label sits on the wire: its own row, or the row of an
                 # existing straight wire it shares (e.g. a repeated route).
                 line_y = ya if abs(ya - yb) < 0.5 else ry + L.row_h / 2
                 if text not in (None, ""):
                     dwg.text(text, mid - LABEL_W / 2, line_y - LABEL_H, key)
-                if r.get("cable") and b.id in field_ids:
+                if r.get("cable") and b.id == field_end:
                     # Cable tag and core just under the field wire's label.
                     dwg.text(f'<font style="font-size: {CABLE_FONT_PX}px;">{cable_text(r["cable"])}</font>',
                              mid - LABEL_W / 2, line_y - LABEL_H + CABLE_DY, key)
@@ -831,6 +900,7 @@ def render(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
 # Each level of a block is a column: single = A only, double = A and B,
 # triple = A, B and C. Blocks that share a terminal_blocks_order and have
 # 3 columns or fewer between them share a page (X3 + X4, X5 + X6).
+# Earth blocks (earth: true, e.g. X0) always get a page of their own.
 #
 # Every terminal is listed in number order with each panel wire on it. Wires
 # out to field devices are left off, unless the terminal has no panel wire
@@ -867,6 +937,8 @@ def wire_segments(points: dict, ctrl_points: dict) -> list[tuple]:
             ends += [("terminal", t) for t in r["via"]]
             if "terminal" in dst:
                 ends.append(("terminal", dst["terminal"]))
+            elif "cut_back" in dst:
+                ends.append(("field", f"{tag}-(screen)"))
             else:
                 flabel = fifs[dst["field_interface"]].get("label", dst["field_interface"].upper())
                 ends.append(("field", f"{tag}-({flabel})"))
@@ -940,16 +1012,19 @@ def plan_strips(segments: list[tuple], layout: Layout) -> list[dict]:
         name = f"{block} - {info['label']}" if info.get("label") else block
         strips.append({"block": block, "name": name, "levels": levels, "rows": rows,
                        "reversed": bool(info.get("reversed", False)),
-                       "order": layout.block_order.get(block, 99)})
+                       "order": layout.block_order.get(block, 99),
+                       "earth": bool(info.get("earth"))})
     return strips
 
 
 def group_strip_pages(strips: list[dict]) -> list[list[dict]]:
-    """Blocks with the same order share a page while they fit in 3 columns."""
+    """Blocks with the same order share a page while they fit in 3 columns.
+    Earth blocks (earth: true) always get a page of their own."""
     pages: list[list[dict]] = []
     for st in strips:
         last = pages[-1] if pages else None
         if (last and last[0]["order"] == st["order"]
+                and not st["earth"] and not last[0]["earth"]
                 and sum(len(x["levels"]) for x in last) + len(st["levels"]) <= 3):
             last.append(st)
         else:

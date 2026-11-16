@@ -67,6 +67,17 @@ layout:
     # X8: {type: triple, color: grey, commons: [X8-002, X8-005, X8-006]}
     # X8: {type: fuse, color: black}
 
+    X0: 
+      label: "Earth"
+      type: single
+      color: green
+      reversed: false
+      earth: true
+    # Below comments for AI to undertand changes and build new terminal drawing. 
+    # X8: {type: double, color: grey, commons: [X8-002, X8-005, X8-006]}
+    # X8: {type: triple, color: grey, commons: [X8-002, X8-005, X8-006]}
+    # X8: {type: fuse, color: black}
+
     terminal_blocks_order:
       # Closest to controller to furthest away.
       # I have not added this to the above section, but it is easier to visualize the order of the terminal blocks in the drawing if they are listed here.
@@ -78,6 +89,7 @@ layout:
 
       X7: {order: 3}  # Digital I/O terminal strip
       X8: {order: 3}  # Analog I/O terminal strip
+      X0: {order: 1}  # Earth terminals, in the IO column
 
       other: {order: 4}  # MSSB or other terminals
 
@@ -121,11 +133,18 @@ points:
         labels: [X8-002]
         to: {terminal: X8-002A}
 
-      common_ground_mk2:
+      common_ground_to_terminal:
         from: {terminal: X8-002B}
         via: []
         labels: [48-001]
         to: {terminal: X4-001}
+      
+      screen:
+        from: {terminal: X0-001}
+        via: []
+        labels: [SCR]
+        cable: {tag: CF-8-1, core: screen}
+        to: {cut_back: true}     # new end: screen cut back and insulated at the device
 
   TT13-OAT:
     controller: SNC01
@@ -203,6 +222,7 @@ points:
         via: []
         labels: [48-002]
         to: {terminal: X4-002}
+
 
   TT15-OAT:
     controller: SNC01

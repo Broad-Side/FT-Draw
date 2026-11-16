@@ -104,8 +104,8 @@ wiring:
 | `from` | `{point, interface}` or `{terminal}` | `interface` must exist on that IO in the controller template |
 | `via` | list of terminal names | May be empty `[]` |
 | `labels` | list of text | Exactly `len(via) + 1` entries. An empty entry draws no label |
-| `to` | `{field_interface}` or `{terminal}` | `field_interface` must be declared under the point's `field_device.interfaces` |
-| `cable` | `{tag, core}` | Optional. The cable the wire out to the field device runs in. Only on routes that end at a `field_interface`. `tag` must be in `cables.yml`; `core` must be one of that cable type's cores |
+| `to` | `{field_interface}`, `{terminal}` or `{cut_back: true}` | `field_interface` must be declared under the point's `field_device.interfaces`. `cut_back` is only for cable screens (see Cable screens) |
+| `cable` | `{tag, core}` | Optional. The cable the wire out to the field device runs in. Only on routes that end at a `field_interface` or `cut_back`. `tag` must be in `cables.yml`; `core` must be one of that cable type's cores |
 
 ### Cables
 
@@ -153,6 +153,42 @@ cables:
 ```
 
 On the drawing, a wire with a `cable` gets a small 6px `<tag> / <core>` line just under its wire label, e.g. `CF-8-1 / 1-white`. The wire label itself is unchanged: it comes from `labels`, which follows the terminal.
+
+### Cable screens and earth terminals
+
+A cable screen is earthed at the panel end only, on an earth terminal block, and cut back and insulated at the field device. Mark the earth block with `earth: true`:
+
+```yaml
+layout:
+  terminal_block_info:
+    X0:
+      label: Earth
+      type: single
+      color: green
+      reversed: true
+      earth: true          # screens may only start on this block
+    terminal_blocks_order:
+      X0: {order: 3}       # same column as the IO terminals
+```
+
+Then write the screen as its own route, from an earth terminal to `cut_back`:
+
+```yaml
+wiring:
+  screen:
+    from: {terminal: X0-001}
+    via: []
+    labels: [SCR]
+    cable: {tag: CF-8-1, core: screen}
+    to: {cut_back: true}   # screen cut back and insulated at the device
+```
+
+- Earth terminals are drawn with a 2px border in the block's colour.
+- The screen goes on the row just under its cable's other cores. Panel-to-panel links on the same point move down below it.
+- The screen is drawn as a dashed line in the earth block's colour. It always ends at the same place, whatever column the earth terminal is in: a short tick 106px left of the field device (x 1122 with the default `field_device_x`), with its labels centred 50.5px left of the tick, in line with the field-wire labels. It never reaches the field device. If the earth terminal is so far right that the labels would overlap it, the labels go just after the terminal and the tick just after them.
+- The earth terminal strip page lists it as `<point>-(screen)`, e.g. `TT12-OAT-(screen)`. An earth block always gets a strip page of its own, even when it shares an order with other blocks.
+- Use one earth terminal per screen; the "core already used" check stops a screen being earthed twice.
+- A cable type with `screen: true` whose screen no route earths gives a warning.
 
 ### Terminal names and order
 
@@ -246,7 +282,10 @@ Rows are chosen by the builder, so the order routes are written in `points.yml` 
 
 1. Routes starting at the controller take that controller terminal's row.
 2. Routes starting at a panel terminal take the row of the field terminal they end on, if that row is free.
-3. Otherwise the route takes the first row where it does not overlap another route left to right.
+3. A cable screen takes the row just under its cable's other cores, if that row is free.
+4. Otherwise the route takes the first row where it does not overlap another route left to right.
+
+Routes are placed in this order: controller routes, then other routes out to the field (screens included), then panel-to-panel links.
 
 Wire labels sit on their own wire, halfway between the two boxes it joins. A cable tag / core line, if any, sits just below the field wire.
 
@@ -320,8 +359,13 @@ An ERROR stops the build and writes no drawing (exit code 2). A WARNING or NOTE 
 | `core ... of ... is already used by ...` | Error | Each core carries one wire |
 | `cable ...: type ... is not in the cable type library` | Error | Use a type key from `cableTypes/*.yml` (not its symbol) |
 | `cable ... is in cables.yml but no wire uses it` | Warning | Remove it, or add the wires that use it |
+| `cable ... has a screen but no wire earths it` | Warning | Add a screen route from an earth terminal to `cut_back` |
 | `from must be {point, interface} or {terminal}` | Error | Fix the `from` form |
-| `to must be {field_interface} or {terminal}` | Error | Fix the `to` form |
+| `to must be {field_interface}, {terminal} or {cut_back: true}` | Error | Fix the `to` form |
+| `cut_back must be true` | Error | Write `to: {cut_back: true}` |
+| `to: {cut_back: true} is for cable screens` | Error | Add `cable: {tag: ..., core: screen}` to the route |
+| `a screen is earthed at the panel only` | Error | A `core: screen` route must end with `to: {cut_back: true}` |
+| `a screen must start on an earth terminal` | Error | Start the route on a terminal of a block with `earth: true` |
 | `... has no interface ...` | Error | Use an interface listed on that IO in the template |
 | `from.point is ... but controller_point is ... and they don't share ...` | Error | Start from the point's own IO, or one sharing that terminal |
 | `field_interface ... not declared` | Error | Add it under `field_device.interfaces` |

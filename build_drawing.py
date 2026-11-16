@@ -497,9 +497,71 @@ def normalise_direction(points: dict, layout: Layout) -> None:
                       "(written the other way round in points.yml)", file=sys.stderr)
 
 
+# --------------------------------------------------------------------------
+# Cables
+# --------------------------------------------------------------------------
+# cableTypes/*.yml holds the cable specs (cable_types: <key>: {...}); the
+# project's cables.yml gives each physical cable a tag and a type; a wiring
+# route names one of those cables and the core it uses on its field wire.
+def load_cable_types(dirs: list[Path]) -> dict:
+    types: dict = {}
+    for d in dirs:
+        if not d.is_dir():
+            continue
+        for path in sorted(d.rglob("*.yml")) + sorted(d.rglob("*.yaml")):
+            section = load_yaml(path).get("cable_types") or {}
+            if not isinstance(section, dict):
+                raise ConfigError(f"{path}: cable_types must be a mapping of type key -> details")
+            for key, spec in section.items():
+                if str(key) in types:
+                    raise ConfigError(f"{path}: cable type {key!r} is already defined in another file")
+                if not isinstance(spec, dict):
+                    raise ConfigError(f"{path}: cable type {key!r} must be a mapping")
+                types[str(key)] = {**spec, "_cores": cable_cores(spec, f"{path}: cable type {key!r}")}
+    return types
+
+
+def cable_cores(spec: dict, where: str) -> list[str]:
+    """Core names a wire can use: pairs + pair_colours -> 1-white, 1-black,
+    2-white...; or cores: [...] as written; plus "screen" if screen: true."""
+    if "pairs" in spec and "cores" in spec:
+        raise ConfigError(f"{where}: use pairs or cores, not both")
+    if "pairs" in spec:
+        n, colours = spec["pairs"], spec.get("pair_colours")
+        if not isinstance(n, int) or n < 1:
+            raise ConfigError(f"{where}: pairs must be a whole number >= 1")
+        if not isinstance(colours, list) or len(colours) != 2:
+            raise ConfigError(f"{where}: pair_colours must list the two colours of a pair")
+        cores = [f"{i}-{c}" for i in range(1, n + 1) for c in colours]
+    elif isinstance(spec.get("cores"), list) and spec["cores"]:
+        cores = [str(c) for c in spec["cores"]]
+    else:
+        raise ConfigError(f"{where}: needs pairs + pair_colours, or a cores list")
+    return cores + (["screen"] if spec.get("screen") else [])
+
+
+def load_cables(path: Path, cable_types: dict) -> dict:
+    cables = load_yaml(path).get("cables") or {}
+    if not isinstance(cables, dict):
+        raise ConfigError(f"{path}: cables must be a mapping of tag -> details")
+    for tag, c in cables.items():
+        ctype = (c or {}).get("type")
+        if str(ctype) not in cable_types:
+            raise ConfigError(f"{path}: cable {tag}: type {ctype!r} is not in the cable type library "
+                              f"(have: {', '.join(cable_types) or 'none'})")
+    return {str(k): v for k, v in cables.items()}
+
+
+def cable_text(cable: dict) -> str:
+    return f"{cable['tag']} / {cable['core']}"
+
+
 def validate(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
-             ignore_order: bool) -> None:
+             ignore_order: bool, cables: dict | None = None,
+             cable_types: dict | None = None) -> None:
+    cables, cable_types = cables or {}, cable_types or {}
     used = {}
+    cores_used: dict[tuple, str] = {}
     for tag, p in points.items():
         ctrl = p.get("controller")
         cp = (p.get("controller_point") or {}).get("point")
@@ -558,6 +620,23 @@ def validate(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
                         )
             if "field_interface" in dst and dst["field_interface"] not in fifs:
                 raise ConfigError(f"{where}: field_interface {dst['field_interface']!r} not declared")
+            if r.get("cable") is not None:
+                c = r["cable"]
+                if not isinstance(c, dict) or set(c) != {"tag", "core"}:
+                    raise ConfigError(f"{where}: cable must be {{tag, core}}, e.g. {{tag: CF-8-1, core: 1-white}}")
+                if "field_interface" not in dst:
+                    raise ConfigError(f"{where}: cable is for the wire out to the field device, "
+                                      "but this route ends on a panel terminal")
+                tag_, core = str(c["tag"]), str(c["core"])
+                if tag_ not in cables:
+                    raise ConfigError(f"{where}: cable {tag_!r} is not in cables.yml")
+                ctype = str(cables[tag_]["type"])
+                if core not in cable_types[ctype]["_cores"]:
+                    raise ConfigError(f"{where}: cable {tag_} ({ctype}) has no core {core!r} "
+                                      f"(has: {', '.join(cable_types[ctype]['_cores'])})")
+                if (tag_, core) in cores_used:
+                    raise ConfigError(f"{where}: core {core} of {tag_} is already used by {cores_used[(tag_, core)]}")
+                cores_used[(tag_, core)] = where
 
             terms = route_terminals(r)
             orders = [layout.order(t) for t in terms]
@@ -569,10 +648,18 @@ def validate(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
                     raise ConfigError(msg + "\n  (re-run with --ignore-terminal-order to draw anyway)")
                 print("WARNING: " + msg, file=sys.stderr)
 
+    for tag_ in cables:
+        if not any(t == tag_ for t, _ in cores_used):
+            print(f"WARNING: cable {tag_} is in cables.yml but no wire uses it", file=sys.stderr)
+
 
 # --------------------------------------------------------------------------
 # Rendering
 # --------------------------------------------------------------------------
+CABLE_FONT_PX = 6   # cable tag / core text under the wire label
+CABLE_DY = 11       # offset from the wire label's top
+
+
 def render(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
            background: Path | None = None, title_fields: dict | None = None,
            revisions: list | None = None) -> Drawing:
@@ -717,13 +804,17 @@ def render(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
                 else:
                     bend = None
                 dwg.wire(a, b, key, bend_x=bend)
+                mid = (a.right + b.x) / 2
+                ya, yb = a.y + a.h / 2, b.y + b.h / 2
+                # Label sits on the wire: its own row, or the row of an
+                # existing straight wire it shares (e.g. a repeated route).
+                line_y = ya if abs(ya - yb) < 0.5 else ry + L.row_h / 2
                 if text not in (None, ""):
-                    mid = (a.right + b.x) / 2
-                    ya, yb = a.y + a.h / 2, b.y + b.h / 2
-                    # Label sits on the wire: its own row, or the row of an
-                    # existing straight wire it shares (e.g. a repeated route).
-                    line_y = ya if abs(ya - yb) < 0.5 else ry + L.row_h / 2
                     dwg.text(text, mid - LABEL_W / 2, line_y - LABEL_H, key)
+                if r.get("cable") and b.id in field_ids:
+                    # Cable tag and core just under the field wire's label.
+                    dwg.text(f'<font style="font-size: {CABLE_FONT_PX}px;">{cable_text(r["cable"])}</font>',
+                             mid - LABEL_W / 2, line_y - LABEL_H + CABLE_DY, key)
 
         # Block height = longest of controller rows, field rows, drawn connections.
         used_rows = max((pl["row"] + 1 for pl in plans), default=0)
@@ -960,6 +1051,10 @@ def main() -> int:
                     help="title block values. Default: projectDetails.yml next to points.yml")
     ap.add_argument("--rev-history", type=Path,
                     help="revision history CSV. Default: revHistory.csv next to points.yml")
+    ap.add_argument("--cables", type=Path,
+                    help="project cable list. Default: cables.yml next to points.yml")
+    ap.add_argument("--cable-library", type=Path, action="append", default=[],
+                    help="extra folder to search for cable type YAML (repeatable)")
     ap.add_argument("--no-terminal-strips", action="store_true",
                     help="only draw the points page, no terminal strip pages")
     a = ap.parse_args()
@@ -984,7 +1079,14 @@ def main() -> int:
     layout_cfg = project.get("layout") or {}
     layout = Layout.from_yaml(layout_cfg)
     normalise_direction(points, layout)
-    validate(points, controllers, ctrl_points, layout, a.ignore_terminal_order)
+    cable_types = load_cable_types(a.cable_library + [a.points.parent / "cableTypes", here / "cableTypes"])
+    cables = {}
+    cables_file = a.cables or a.points.parent / "cables.yml"
+    if cables_file.is_file():
+        cables = load_cables(cables_file, cable_types)
+    elif a.cables:
+        raise ConfigError(f"cables file not found: {cables_file}")
+    validate(points, controllers, ctrl_points, layout, a.ignore_terminal_order, cables, cable_types)
 
     background = None
     if not a.no_background:

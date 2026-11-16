@@ -1,0 +1,65 @@
+# Cable type library: the cable specs you buy, reused on every project.
+# A project's cables.yml gives each physical cable a tag and one of these types.
+#
+# Key:        your name for the spec (shown in errors and cable schedules).
+# symbol:     optional short code (e.g. A) for legends and schedules.
+# Cores, written one of two ways:
+#   pairs: N + pair_colours: [white, black]   -> cores 1-white, 1-black, 2-white, ...
+#   cores: [white, black, red]                -> cores white, black, red
+# screen: true adds a core called "screen" (drain/shield) that wires can land.
+
+cable_types:
+  TP1-1.0-SCR:
+    symbol: A
+    description: 1 pair 1.0mm² twisted pair, screened
+    conductor_mm2: 1.0
+    sheath_colour: black
+    pairs: 1
+    pair_colours: [white, black]
+    screen: true
+
+  MC3-1.0-SCR:
+    symbol: B
+    description: 3 core 1.0mm², screened
+    conductor_mm2: 1.0
+    sheath_colour: black
+    cores: [white, black, red]
+    screen: true
+
+  TP2-1.0-SCR:
+    symbol: C
+    description: 2 pair 1.0mm² twisted pair, screened
+    conductor_mm2: 1.0
+    sheath_colour: black
+    pairs: 2
+    pair_colours: [white, black]
+    screen: true
+
+  TP3-1.0-SCR:
+    symbol: D
+    description: 3 pair 1.0mm² twisted pair, screened
+    conductor_mm2: 1.0
+    sheath_colour: black
+    pairs: 3
+    pair_colours: [white, black]
+    screen: true
+
+  TP4-1.0-SCR:
+    symbol: E
+    description: 4 pair 1.0mm² twisted pair, screened
+    conductor_mm2: 1.0
+    sheath_colour: black
+    pairs: 4
+    pair_colours: [white, black]
+    screen: true
+
+  TP6-1.0-SCR:
+    symbol: F
+    description: 6 pair 1.0mm² twisted pair, screened
+    conductor_mm2: 1.0
+    sheath_colour: black
+    pairs: 6
+    pair_colours: [white, black]
+    screen: true
+
+  # Optional fields for any type: voltage_rating, fire_rating, manufacturer, part_number

@@ -105,12 +105,14 @@ points:
         from: {point: UI1, interface: signal}
         via: [X8-001B]
         labels: [8-001B, 8-001B]
+        cable: {tag: CF-8-1, core: 1-white}
         to: {field_interface: signal}
 
       supply:
         from: {terminal: X3-001}
         via: [X8-001A]
         labels: [38-001, 8-001A]
+        cable: {tag: CF-8-1, core: 1-black}
         to: {field_interface: supply}
 
       common_ground:

@@ -29,8 +29,10 @@ python3 build_drawing.py project/testProject/points.yml -o output.drawio
 | `--background <file>` | Use a different background drawing |
 | `--no-background` | Draw without a background |
 | `--ignore-terminal-order` | Warn instead of stopping when a route's terminals are out of order |
+| `--cables <file>` | Cable list. Default: `cables.yml` next to `points.yml` |
+| `--cable-library <dir>` | Extra folder to search for cable type YAML; repeatable |
 
-`controllers.yml`, `panelDetails.yml`, `cables.yml`, `terminalBlocks.yml` and `terminal_strips.yml` in the project folder are not read by the builder yet.
+`controllers.yml`, `panelDetails.yml`, `terminalBlocks.yml` and `terminal_strips.yml` in the project folder are not read by the builder yet.
 
 ## points.yml: top level
 
@@ -93,6 +95,7 @@ wiring:
     from: {point: UI1, interface: signal}   # controller terminal
     via: [X8-001B]                          # panel terminals in between
     labels: [8-001B, 8-001B]                # one per wire = len(via) + 1
+    cable: {tag: CF-8-1, core: 1-white}     # optional: cable on the field wire
     to: {field_interface: signal}           # field device terminal
 ```
 
@@ -102,6 +105,54 @@ wiring:
 | `via` | list of terminal names | May be empty `[]` |
 | `labels` | list of text | Exactly `len(via) + 1` entries. An empty entry draws no label |
 | `to` | `{field_interface}` or `{terminal}` | `field_interface` must be declared under the point's `field_device.interfaces` |
+| `cable` | `{tag, core}` | Optional. The cable the wire out to the field device runs in. Only on routes that end at a `field_interface`. `tag` must be in `cables.yml`; `core` must be one of that cable type's cores |
+
+### Cables
+
+Cables are kept in three places, so each fact is written once:
+
+| What | Where | Example |
+| --- | --- | --- |
+| Cable type (the spec you buy) | `cableTypes/*.yml` (a library, like controller templates) | `TP1-1.0-SCR` |
+| Cable (one physical cable on this job) | `cables.yml` next to `points.yml` | `CF-8-1`, type `TP1-1.0-SCR` |
+| Core (which conductor a wire uses) | `cable:` on the wiring route | `{tag: CF-8-1, core: 1-white}` |
+
+Cable types are read from `cableTypes/` next to `points.yml`, then `cableTypes/` beside the builder, then any `--cable-library` folders. A type key may only be defined once.
+
+```yaml
+# cableTypes/standard.yml
+cable_types:
+  TP1-1.0-SCR:
+    symbol: A                     # optional short code for legends/schedules
+    description: 1 pair 1.0mm² twisted pair, screened
+    conductor_mm2: 1.0
+    sheath_colour: black
+    pairs: 1
+    pair_colours: [white, black]
+    screen: true
+```
+
+| Key | Required | Meaning |
+| --- | --- | --- |
+| `pairs` + `pair_colours` | One of these or `cores` | Cores are named `<pair>-<colour>`: `1-white`, `1-black`, `2-white`... |
+| `cores` | One of these or `pairs` | List of core names as written, e.g. `[white, black, red]` |
+| `screen` | No | `true` adds a core called `screen` |
+| `symbol` | No | Short code such as `A`. Not drawn yet; for legends and cable schedules |
+| `description`, `conductor_mm2`, `sheath_colour`, `voltage_rating`, `fire_rating`, `manufacturer`, `part_number` | No | For reference; not checked |
+
+```yaml
+# cables.yml
+cables:
+  CF-8-1:
+    type: TP1-1.0-SCR             # a cable type key (not its symbol)
+    route_from: SNC01 panel
+    route_to: TT12-OAT
+    estimated_length_m:
+    installed_length_m:
+    notes:
+```
+
+On the drawing, a wire with a `cable` gets a small 6px `<tag> / <core>` line just under its wire label, e.g. `CF-8-1 / 1-white`. The wire label itself is unchanged: it comes from `labels`, which follows the terminal.
 
 ### Terminal names and order
 
@@ -197,7 +248,7 @@ Rows are chosen by the builder, so the order routes are written in `points.yml` 
 2. Routes starting at a panel terminal take the row of the field terminal they end on, if that row is free.
 3. Otherwise the route takes the first row where it does not overlap another route left to right.
 
-Wire labels sit on their own wire, halfway between the two boxes it joins.
+Wire labels sit on their own wire, halfway between the two boxes it joins. A cable tag / core line, if any, sits just below the field wire.
 
 ## projectDetails.yml: title block
 
@@ -262,6 +313,13 @@ An ERROR stops the build and writes no drawing (exit code 2). A WARNING or NOTE 
 | `missing from, via, labels, to` | Error | Every route needs all four keys |
 | `via and labels must be lists` | Error | Use `[...]`, even when empty |
 | `needs N labels (one per wire)` | Error | `labels` = `len(via) + 1` |
+| `cable must be {tag, core}` | Error | e.g. `cable: {tag: CF-8-1, core: 1-white}` |
+| `cable is for the wire out to the field device` | Error | Only routes ending at a `field_interface` take a `cable` |
+| `cable ... is not in cables.yml` | Error | Add the cable to `cables.yml`, or fix the tag |
+| `cable ... has no core ...` | Error | Use one of the cores listed in the message |
+| `core ... of ... is already used by ...` | Error | Each core carries one wire |
+| `cable ...: type ... is not in the cable type library` | Error | Use a type key from `cableTypes/*.yml` (not its symbol) |
+| `cable ... is in cables.yml but no wire uses it` | Warning | Remove it, or add the wires that use it |
 | `from must be {point, interface} or {terminal}` | Error | Fix the `from` form |
 | `to must be {field_interface} or {terminal}` | Error | Fix the `to` form |
 | `... has no interface ...` | Error | Use an interface listed on that IO in the template |

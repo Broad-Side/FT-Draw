@@ -1,16 +1,14 @@
-cable:
-  tag:
-  number:
-  type:
-  core_count:
-  conductor_size_mm2:
-  screened:
-  fire_rating:
-  voltage_rating:
-  manufacturer:
-  part_number:
-  route_from:
-  route_to:
-  estimated_length_m:
-  installed_length_m:
-  notes:
+# One entry per physical cable on this project, keyed by its tag.
+# type must be a key in the cable type library (cableTypes/*.yml).
+# Wires use a cable in points.yml with:  cable: {tag: CF-8-1, core: 1-white}
+#
+# Spec details (size, screen, part number...) belong to the cable type, not here.
+
+cables:
+  CF-8-1:
+    type: TP1-1.0-SCR
+    route_from: SNC01 panel
+    route_to: TT12-OAT
+    estimated_length_m:
+    installed_length_m:
+    notes:

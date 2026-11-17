@@ -109,6 +109,24 @@ COLOURS = {  # terminal block colour -> (fill, font)
     "orange": ("#FA6800", "#000000"), "brown": ("#A0522D", "#FFFFFF"),
 }
 COMMON_STROKE = "strokeWidth=3;"
+# Wire colour name -> line colour on the drawing. White is drawn mid grey and
+# green/yellow plain green, so both show up on a white page.
+WIRE_COLOURS = {
+    "red": "#E51400", "black": "#000000", "blue": "#0050EF", "dark-blue": "#001DBC",
+    "light-blue": "#1BA1E2", "white": "#808080", "grey": "#A0A0A0", "gray": "#A0A0A0",
+    "brown": "#A0522D", "orange": "#FA6800", "yellow": "#E3C800", "green": "#60A917",
+    "green-yellow": "#60A917", "violet": "#6A00FF", "purple": "#6A00FF", "pink": "#F472D0",
+}
+
+
+def wire_draw_colour(colour: str, where: str) -> str:
+    c = str(colour).strip().lower().replace("/", "-").replace(" ", "-")
+    if c.startswith("#"):
+        return c
+    if c not in WIRE_COLOURS:
+        raise ConfigError(f"{where}: unknown wire colour {colour!r} "
+                          f"(use one of {', '.join(WIRE_COLOURS)}, or a #hex value)")
+    return WIRE_COLOURS[c]
 
 
 def terminal_block(terminal: str) -> str:
@@ -387,6 +405,19 @@ class Drawing:
                  "verticalAlign=middle;fontSize=10;" + FONT)
 
     def save(self, path: Path):
+        # Wires go behind the boxes on every page: draw.io paints cells in
+        # file order, so a wire written after a box would sit on top of it
+        # where it meets or touches the box.
+        for root in self.mxfile.iter("root"):
+            cells = list(root)
+            wires = [c for c in cells if c.get("edge") == "1" and c.get("parent") == "1"]
+            if not wires:
+                continue
+            for c in wires:
+                root.remove(c)
+            at = next(i for i, c in enumerate(list(root)) if c.get("id") == "1") + 1
+            for k, c in enumerate(wires):
+                root.insert(at + k, c)
         ET.indent(self.mxfile, space="  ")
         ET.ElementTree(self.mxfile).write(path, encoding="utf-8", xml_declaration=True)
 
@@ -409,6 +440,9 @@ class Layout:
     block_order: dict = field(default_factory=dict)
     block_info: dict = field(default_factory=dict)
     strip_area: tuple = (16, 1386)
+    circuits: dict = field(default_factory=dict)       # name -> line colour
+    role_circuits: dict = field(default_factory=dict)  # controller interface role -> circuit
+    default_circuit: str | None = None
 
     @classmethod
     def from_yaml(cls, cfg: dict) -> "Layout":
@@ -445,6 +479,7 @@ class Layout:
             block_info=info,
             strip_area=(float((cfg.get("terminal_strip_area") or {}).get("left", 16)),
                         float((cfg.get("terminal_strip_area") or {}).get("right", 1386))),
+            **load_circuits(cfg, info),
         )
 
     def order(self, terminal: str) -> int:
@@ -470,6 +505,145 @@ class Layout:
     def earth_stroke(self, terminal: str) -> str:
         colour = str(self.block_info.get(terminal_block(terminal), {}).get("color", "")).lower()
         return COLOURS.get(colour, (colour,))[0] if colour else "#60A917"
+
+
+# --------------------------------------------------------------------------
+# Panel wire circuits and colours
+# --------------------------------------------------------------------------
+# layout.wire_circuits names each circuit and its wire colour, with an
+# optional second (stripe) colour for two-colour wires such as blue/white. A route takes
+# its circuit from (first that applies):
+#   1. its own circuit: key,
+#   2. the circuit: of any terminal block it touches (X3 -> 24VDC ...),
+#   3. the controller interface's role (layout.role_circuits),
+#   4. layout.default_circuit (SIGNAL if that circuit exists).
+# A field wire in a cable is drawn in its core's colour instead.
+DEFAULT_ROLE_CIRCUITS = {"signal_common": "0VDC"}
+CIRCUIT_KEYS = {"colour", "draw", "stripe", "stripe_draw"}
+
+
+def load_circuits(cfg: dict, block_info: dict) -> dict:
+    raw = cfg.get("wire_circuits") or {}
+    if not isinstance(raw, dict):
+        raise ConfigError("layout.wire_circuits must map circuit name -> {colour, draw}")
+    circuits = {}   # name -> edge style for that circuit's wires
+    for name, c in raw.items():
+        c = c if isinstance(c, dict) else {"colour": c}
+        where = f"layout.wire_circuits.{name}"
+        unknown = set(c) - CIRCUIT_KEYS
+        if unknown:
+            raise ConfigError(f"{where}: unknown key(s) {', '.join(sorted(map(str, unknown)))} "
+                              f"(allowed: {', '.join(sorted(CIRCUIT_KEYS))})")
+        if not c.get("colour") and not c.get("draw"):
+            raise ConfigError(f"{where}: needs a colour")
+        main = wire_draw_colour(c.get("draw") or c["colour"], where)
+        if c.get("stripe") or c.get("stripe_draw"):
+            # Two-colour wire: draw.io's wire shape draws fillColor as the
+            # line and strokeColor dashed over it, giving a striped line.
+            stripe = wire_draw_colour(c.get("stripe_draw") or c["stripe"], f"{where}.stripe")
+            circuits[str(name)] = f"shape=wire;dashed=1;fillColor={main};strokeColor={stripe};"
+        else:
+            circuits[str(name)] = f"strokeColor={main};"
+    if not circuits:
+        return {}
+    roles = {**DEFAULT_ROLE_CIRCUITS, **{str(k): str(v) for k, v in (cfg.get("role_circuits") or {}).items()}}
+    roles = {k: v for k, v in roles.items() if v in circuits or k in (cfg.get("role_circuits") or {})}
+    default = cfg.get("default_circuit") or ("SIGNAL" if "SIGNAL" in circuits else None)
+    for where, name in ([(f"layout.role_circuits.{k}", v) for k, v in roles.items()]
+                        + [(f"layout.terminal_block_info.{b}.circuit", i.get("circuit"))
+                           for b, i in block_info.items() if isinstance(i, dict) and i.get("circuit")]
+                        + ([("layout.default_circuit", default)] if default else [])):
+        if str(name) not in circuits:
+            raise ConfigError(f"{where}: circuit {name!r} is not in layout.wire_circuits "
+                              f"(have: {', '.join(circuits)})")
+    return {"circuits": circuits, "role_circuits": roles,
+            "default_circuit": str(default) if default else None}
+
+
+def route_circuit(r: dict, layout: "Layout", ctrl_points: dict, ctrl: str, where: str) -> str | None:
+    """The circuit a route belongs to, or None if no circuits are set up."""
+    if not layout.circuits:
+        return None
+    if r.get("circuit") is not None:
+        if str(r["circuit"]) not in layout.circuits:
+            raise ConfigError(f"{where}: circuit {r['circuit']!r} is not in layout.wire_circuits "
+                              f"(have: {', '.join(layout.circuits)})")
+        return str(r["circuit"])
+    found = {}
+    for t in route_terminals(r):
+        c = layout.block_info.get(terminal_block(t), {}).get("circuit")
+        if c:
+            found.setdefault(str(c), t)
+    if len(found) > 1:
+        raise ConfigError(f"{where}: connects different circuits: "
+                          + ", ".join(f"{t} ({c})" for c, t in found.items())
+                          + " - check the wiring, or set circuit: on the route if it is right")
+    if found:
+        return next(iter(found))
+    src = r["from"]
+    if "point" in src:
+        role = ctrl_points[ctrl][src["point"]]["interfaces"][src["interface"]].get("role")
+        if role in layout.role_circuits:
+            return layout.role_circuits[role]
+    return layout.default_circuit
+
+
+def core_colour(core: str) -> str:
+    """'1-white' -> 'white' (pair number dropped)."""
+    return re.sub(r"^\d+-", "", str(core))
+
+
+def segment_strokes(r: dict, layout: "Layout", ctrl_points: dict, ctrl: str, where: str) -> list[str]:
+    """Extra edge style for each wire of a route: its line colour, dashed for screens."""
+    circuit = route_circuit(r, layout, ctrl_points, ctrl, where)
+    base = layout.circuits.get(circuit, "") if circuit else ""
+    cable = r.get("cable") or {}
+    screen = cable.get("core") == "screen"
+    if screen and not base and "terminal" in r["from"]:
+        base = f"strokeColor={layout.earth_stroke(r['from']['terminal'])};"
+    if screen and "dashed=1;" not in base:
+        base += "dashed=1;"
+    out = []
+    n = len(r["labels"])
+    for i in range(n):
+        style = base
+        if i == n - 1 and cable and not screen and "terminal" not in r["to"]:
+            style = f"strokeColor={wire_draw_colour(core_colour(cable['core']), f'{where}: cable core')};"
+        out.append(style)
+    return out
+
+
+def wire_number_problems(points: dict, ctrl_points: dict) -> list[str]:
+    """Wire numbers that don't follow the rule:
+         wire landing on a terminal  -> that terminal without the X  (8-001B)
+         link between two blocks     -> <from><to>-<nnn>              (38-001)
+    Warnings only; labels stay as written."""
+    def number(t: str) -> str | None:
+        m = TERMINAL_RE.match(str(t).upper())
+        return f"{re.sub(r'^[A-Z]+', '', m['block'])}-{m['num']}{m['level']}" if m else None
+
+    out = []
+    for tag, p in points.items():
+        for rname, r in (p.get("wiring") or {}).items():
+            src, dst = r["from"], r["to"]
+            ends = [src.get("terminal")] + list(r["via"]) + [dst.get("terminal")]
+            for i, lbl in enumerate(r["labels"]):
+                if lbl in (None, ""):
+                    continue
+                a, b = ends[i], ends[i + 1]
+                ok = [n for n in (number(a) if a else None, number(b) if b else None) if n]
+                link = None
+                if a and b and terminal_block(a) != terminal_block(b):
+                    da, db = (re.sub(r"^[A-Z]+", "", terminal_block(t)) for t in (a, b))
+                    link = f"{da}{db}-"
+                    if re.fullmatch(rf"{re.escape(link)}\d{{3}}", str(lbl)):
+                        continue
+                if not ok or str(lbl) in ok:
+                    continue
+                want = " or ".join(ok + ([f"{link}nnn"] if link else []))
+                out.append(f"{tag}.wiring.{rname}: wire number {lbl!r} doesn't follow the "
+                           f"numbering rule (expected {want})")
+    return out
 
 
 # --------------------------------------------------------------------------
@@ -657,6 +831,8 @@ def validate(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
             if "cut_back" in dst and (r.get("cable") or {}).get("core") != "screen":
                 raise ConfigError(f"{where}: to: {{cut_back: true}} is for cable screens; "
                                   "add cable: {tag: ..., core: screen}")
+
+            route_circuit(r, layout, ctrl_points, ctrl, where)
 
             terms = route_terminals(r)
             orders = [layout.order(t) for t in terms]
@@ -859,20 +1035,18 @@ def render(points: dict, controllers: dict, ctrl_points: dict, layout: Layout,
                                      "rounded=0;html=1;fillColor=#000000;strokeColor=#000000;"))
             else:
                 chain.append(term(dst["terminal"]))
-            is_screen = (r.get("cable") or {}).get("core") == "screen"
-            wire_style = (f"dashed=1;strokeColor={L.earth_stroke(src['terminal'])};"
-                          if is_screen else "")
+            strokes = segment_strokes(r, L, ctrl_points, ctrl, key)
             field_end = chain[-1].id if "terminal" not in dst else None
             cut_id = chain[-1].id if "cut_back" in dst else None
 
-            for (a, b), text in zip(zip(chain, chain[1:]), r["labels"]):
+            for (a, b), text, stroke in zip(zip(chain, chain[1:]), r["labels"], strokes):
                 if b.id in field_ids:
                     bend = L.field_x - L.field_jog          # tight to the field device
                 elif "point" in src and a is chain[0]:
                     bend = a.right + L.field_jog            # tight to the controller
                 else:
                     bend = None
-                dwg.wire(a, b, key, bend_x=bend, extra_style=wire_style)
+                dwg.wire(a, b, key, bend_x=bend, extra_style=stroke)
                 mid = cut_label_mid if b.id == cut_id else (a.right + b.x) / 2
                 ya, yb = a.y + a.h / 2, b.y + b.h / 2
                 # Label sits on the wire: its own row, or the row of an
@@ -919,16 +1093,17 @@ STRIP_SRC_TEXT_W = 110  # width of a non-terminal "other end" text
 STRIP_COL_W = STRIP_TERM_DX + TERM_W
 
 
-def wire_segments(points: dict, ctrl_points: dict) -> list[tuple]:
-    """Every individual wire in points.yml as (end_a, end_b, label).
+def wire_segments(points: dict, ctrl_points: dict, layout: "Layout") -> list[tuple]:
+    """Every individual wire in points.yml as (end_a, end_b, label, stroke).
     An end is ("terminal", "X8-001A"), ("text", "UI1-C-(2)") for a controller
     terminal, or ("field", "TT12-OAT-(+)") for a field device."""
     out = []
     for tag, p in points.items():
         ctrl = p["controller"]
         fifs = (p.get("field_device") or {}).get("interfaces") or {}
-        for r in (p.get("wiring") or {}).values():
+        for rname, r in (p.get("wiring") or {}).items():
             src, dst = r["from"], r["to"]
+            strokes = segment_strokes(r, layout, ctrl_points, ctrl, f"{tag}.wiring.{rname}")
             if "point" in src:
                 idef = ctrl_points[ctrl][src["point"]]["interfaces"][src["interface"]]
                 ends = [("text", f"{src['point']}-{src['interface'][:1].upper()}-({idef.get('terminal', '?')})")]
@@ -942,8 +1117,8 @@ def wire_segments(points: dict, ctrl_points: dict) -> list[tuple]:
             else:
                 flabel = fifs[dst["field_interface"]].get("label", dst["field_interface"].upper())
                 ends.append(("field", f"{tag}-({flabel})"))
-            out += [(a, b, "" if lbl is None else str(lbl))
-                    for (a, b), lbl in zip(zip(ends, ends[1:]), r["labels"])]
+            out += [(a, b, "" if lbl is None else str(lbl), st)
+                    for (a, b), lbl, st in zip(zip(ends, ends[1:]), r["labels"], strokes)]
     return out
 
 
@@ -959,7 +1134,7 @@ def plan_strips(segments: list[tuple], layout: Layout) -> list[dict]:
     """Work out which strips to draw, their levels, terminals and wires."""
     used: dict[str, dict] = {}     # block -> {terminal name: [(other end, label)]}
     field: dict[str, dict] = {}    # same, wires out to field devices only
-    for a, b, lbl in segments:
+    for a, b, lbl, stroke in segments:
         for me, other in ((a, b), (b, a)):
             if me[0] != "terminal":
                 continue
@@ -970,7 +1145,7 @@ def plan_strips(segments: list[tuple], layout: Layout) -> list[dict]:
                           file=sys.stderr)
                 continue
             target = field if other[0] == "field" else used
-            target.setdefault(TERMINAL_RE.match(t)["block"], {}).setdefault(me[1], []).append((other, lbl))
+            target.setdefault(TERMINAL_RE.match(t)["block"], {}).setdefault(me[1], []).append((other, lbl, stroke))
     # Field wiring is only shown on a terminal with no panel wiring, e.g. an
     # X3 supply wired straight to the device - otherwise it would be missing.
     for block, terms in field.items():
@@ -1084,7 +1259,7 @@ def render_strips(dwg: Drawing, segments: list[tuple], layout: Layout,
                 tx, ox = (gx + STRIP_TERM_DX, gx) if st["reversed"] else (gx, gx + STRIP_TERM_DX)
                 term = dwg.box(safe_id("strip", name), name, tx, y, TERM_W, height,
                                terminal_style(layout, name))
-                for j, ((kind, other), lbl) in enumerate(conns):
+                for j, ((kind, other), lbl, stroke) in enumerate(conns):
                     cy = y + TERM_H / 2 + j * STRIP_ROW
                     sid = hash_id("strip_src", name, j, other)
                     if kind == "terminal":
@@ -1097,9 +1272,9 @@ def render_strips(dwg: Drawing, segments: list[tuple], layout: Layout,
                                       + ("align=right;" if st["reversed"] else "align=left;"))
                     frac = (cy - y) / height
                     if st["reversed"]:
-                        dwg.wire(oth, term, f"strip.{name}.{j}", entry_y=frac)
+                        dwg.wire(oth, term, f"strip.{name}.{j}", entry_y=frac, extra_style=stroke)
                     else:
-                        dwg.wire(term, oth, f"strip.{name}.{j}", exit_y=frac)
+                        dwg.wire(term, oth, f"strip.{name}.{j}", exit_y=frac, extra_style=stroke)
                     if lbl:
                         mid = gx + (TERM_W + STRIP_TERM_DX) / 2
                         dwg.text(lbl, mid - LABEL_W / 2, cy - LABEL_H, f"strip.{name}.{j}")
@@ -1162,6 +1337,8 @@ def main() -> int:
     elif a.cables:
         raise ConfigError(f"cables file not found: {cables_file}")
     validate(points, controllers, ctrl_points, layout, a.ignore_terminal_order, cables, cable_types)
+    for msg in dict.fromkeys(wire_number_problems(points, ctrl_points)):
+        print("WARNING: " + msg, file=sys.stderr)
 
     background = None
     if not a.no_background:
@@ -1194,7 +1371,7 @@ def main() -> int:
     dwg = render(points, controllers, ctrl_points, layout, background, title_fields, revisions)
     strip_pages = 0
     if not a.no_terminal_strips:
-        strip_pages = render_strips(dwg, wire_segments(points, ctrl_points), layout, background)
+        strip_pages = render_strips(dwg, wire_segments(points, ctrl_points, layout), layout, background)
     dwg.save(a.output)
 
     n_routes = sum(len(p.get("wiring") or {}) for p in points.values())

@@ -190,6 +190,59 @@ wiring:
 - Use one earth terminal per screen; the "core already used" check stops a screen being earthed twice.
 - A cable type with `screen: true` whose screen no route earths gives a warning.
 
+### Panel wire numbers
+
+Wire numbers are written by hand in `labels` and never changed by the builder. It warns when one doesn't follow the rule:
+
+| Wire | Number | Example |
+| --- | --- | --- |
+| Lands on a panel terminal (controller -> IO terminal, IO terminal -> field) | The terminal name without the leading letters | `8-001B` |
+| Link between two terminal blocks | `<from block><to block>-<nnn>` | `38-001` (X3 -> X8) |
+| Screen to earth | The earth terminal's number | `0-001` |
+
+Use the same number on both ends of a wire, three-digit terminal numbers, and the level letter only on double or triple blocks.
+
+### Panel wire colours
+
+Each panel wire belongs to a circuit, and each circuit has a wire colour. Wires are drawn in that colour, on the points page and the terminal strip pages.
+
+```yaml
+layout:
+  wire_circuits:
+    24VDC:     {colour: red}
+    0VDC:      {colour: black}
+    24VAC:     {colour: blue}
+    24VAC_COM: {colour: grey}
+    SIGNAL:    {colour: white, draw: "#808080"}   # draw: line colour on the page
+    EARTH:     {colour: green-yellow, draw: "#60A917"}
+    0VDC_STRIPED: {colour: blue, stripe: white}         # two-colour wire
+  terminal_block_info:
+    X3: {circuit: 24VDC, ...}
+    X4: {circuit: 0VDC, ...}
+```
+
+A route takes its circuit from the first of these that applies:
+
+1. `circuit: <name>` on the route itself.
+2. The `circuit` of any terminal block it touches. A route touching two blocks with different circuits (e.g. X3 and X4) stops the build.
+3. The controller interface's `role` in the controller template, via `layout.role_circuits` (default `signal_common: 0VDC`).
+4. `layout.default_circuit` (default `SIGNAL`).
+
+A field wire in a cable is drawn in its core's colour instead (`1-white` is white, `1-black` is black). Screens stay dashed.
+
+| Key | Required | Meaning |
+| --- | --- | --- |
+| `colour` | Yes (or `draw`) | The wire's colour |
+| `draw` | No | Line colour on the page, when it should differ from `colour` |
+| `stripe` | No | Second colour of a two-colour wire, e.g. blue with a white stripe |
+| `stripe_draw` | No | Line colour for the stripe, when it should differ from `stripe` |
+
+Any other key stops the build (keys are case-sensitive, so `Draw` is not `draw`).
+
+A wire with a `stripe` is drawn with draw.io's wire shape (`shape=wire;dashed=1`): the main colour is the line (`fillColor`) and the stripe colour is dashed over it (`strokeColor`). A white stripe on a white page reads as gaps in the main colour.
+
+Colours: `red`, `black`, `blue`, `dark-blue`, `light-blue`, `white`, `grey`, `brown`, `orange`, `yellow`, `green`, `green-yellow`, `violet`, `pink`, or a `#hex` value. White is drawn mid grey and green-yellow plain green so they show on a white page; `draw:` overrides the line colour. Without `wire_circuits`, panel wires are drawn black as before.
+
 ### Terminal names and order
 
 A terminal is named `<block>-<number>`, e.g. `X8-001B`. The part before the first dash is the terminal block, and `layout.terminal_blocks` gives each block its column. A name with no dash belongs to `other`.
@@ -267,6 +320,9 @@ Everything under `layout:` is optional. Values are Draw.io units (px).
 | `field_device_x` | 1228 | x of the field device terminal boxes |
 | `field_device_width` | 150 | Field terminal box plus device name |
 | `field_device_jog_offset` | 12 | How far left of the field device (and right of the controller) a wire bends when it changes row |
+| `wire_circuits` | none | Circuit name -> wire colour (see Panel wire colours) |
+| `role_circuits` | `{signal_common: 0VDC}` | Controller interface role -> circuit |
+| `default_circuit` | `SIGNAL` | Circuit for wires nothing else decides |
 | `terminal_blocks` | none | Column for each terminal block: `X8: {order: 3}`. Lower order = closer to the controller. `other` covers names with no block; default is one past the highest |
 | `background` | `backgroundTemplates/Background.drawio` | Background drawing, relative to the repo root |
 
@@ -352,6 +408,9 @@ An ERROR stops the build and writes no drawing (exit code 2). A WARNING or NOTE 
 | `missing from, via, labels, to` | Error | Every route needs all four keys |
 | `via and labels must be lists` | Error | Use `[...]`, even when empty |
 | `needs N labels (one per wire)` | Error | `labels` = `len(via) + 1` |
+| `connects different circuits` | Error | A wire touches blocks of two circuits; fix the wiring, or set `circuit:` on the route |
+| `circuit ... is not in layout.wire_circuits` | Error | Add the circuit, or fix the name |
+| `unknown wire colour` | Error | Use a listed colour name or a `#hex` value |
 | `cable must be {tag, core}` | Error | e.g. `cable: {tag: CF-8-1, core: 1-white}` |
 | `cable is for the wire out to the field device` | Error | Only routes ending at a `field_interface` take a `cable` |
 | `cable ... is not in cables.yml` | Error | Add the cable to `cables.yml`, or fix the tag |
@@ -359,6 +418,7 @@ An ERROR stops the build and writes no drawing (exit code 2). A WARNING or NOTE 
 | `core ... of ... is already used by ...` | Error | Each core carries one wire |
 | `cable ...: type ... is not in the cable type library` | Error | Use a type key from `cableTypes/*.yml` (not its symbol) |
 | `cable ... is in cables.yml but no wire uses it` | Warning | Remove it, or add the wires that use it |
+| `wire number ... doesn't follow the numbering rule` | Warning | Change the label to the expected number, or leave it if it is deliberate |
 | `cable ... has a screen but no wire earths it` | Warning | Add a screen route from an earth terminal to `cut_back` |
 | `from must be {point, interface} or {terminal}` | Error | Fix the `from` form |
 | `to must be {field_interface}, {terminal} or {cut_back: true}` | Error | Fix the `to` form |

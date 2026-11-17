@@ -9,6 +9,34 @@ cables:
     type: TP1-1.0-SCR
     route_from: SNC01 panel
     route_to: TT12-OAT
-    estimated_length_m:
-    installed_length_m:
+    # estimated_length_m:
+    # installed_length_m:
+    # notes:
+  CF-8-2:
+    type: TP1-1.0-SCR
+    route_from: SNC01 panel
+    route_to: TT13-OAT
+    #estimated_length_m:
+    #installed_length_m:
+    notes:
+  CF-8-3:
+    type: TP1-1.0-SCR
+    route_from: SNC01 panel
+    route_to: TT14-OAT
+    # estimated_length_m:
+    # installed_length_m:
+    notes:
+  CF-8-4:
+    type: TP1-1.0-SCR
+    route_from: SNC01 panel
+    route_to: TT15-OAT
+    # estimated_length_m:
+    #installed_length_m:
+    notes:
+  CF-8-5:
+    type: TP2-1.0-SCR
+    route_from: SNC01 panel
+    route_to: TT13-OAT
+    # estimated_length_m:
+    # installed_length_m:
     notes:

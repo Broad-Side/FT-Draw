@@ -20,9 +20,25 @@ layout:
 
   field_device_x: 1228
 
+  # Panel wire circuits and their wire colours. Wires take their circuit from
+  # the terminal block they touch (circuit: below), else the controller
+  # interface role (signal_common -> 0VDC), else SIGNAL. A route can override
+  # with circuit: <name>. Field wires in a cable use the core colour.
+  # draw: is the line colour on the drawing when it differs from the wire.
+  # stripe: (and stripe_draw:) add a second colour, drawn as a striped line.
+  wire_circuits:
+    24VDC:     {colour: blue, draw: "#00ADEF"}
+    0VDC:      {colour: blue, draw: "#00ADEF", stripe: white, stripe_draw: "#FFFFFF"}
+    24VAC:     {colour: red, draw: "#E81123"}
+    24VAC_COM: {colour: red, draw: "#E81123", stripe: grey, stripe_draw: "#808080"}
+    SIGNAL:    {colour: violet, draw: "#B4009E"}
+    EARTH:     {colour: green, draw: "#60A917", stripe: yellow , stripe_draw: "#FFFF00"}
+    VFC:       {colour: white, draw: "#808080"}
+
   terminal_block_info:
     X3: 
       label: 24 VDC
+      circuit: 24VDC
       type: single
       color: red
       commons: []
@@ -30,6 +46,7 @@ layout:
 
     X4: 
       label: 24 VDC Common
+      circuit: 0VDC
       type: single
       color: black
       reversed: false
@@ -37,6 +54,7 @@ layout:
 
     X5: 
       label: 24 VAC
+      circuit: 24VAC
       type: single
       color: grey
       reversed: false
@@ -44,6 +62,7 @@ layout:
 
     X6: 
       label: 24 VAC Common
+      circuit: 24VAC_COM
       type: single
       color: grey
       reversed: false
@@ -69,6 +88,7 @@ layout:
 
     X0: 
       label: "Earth"
+      circuit: EARTH
       type: single
       color: green
       reversed: false
@@ -130,7 +150,7 @@ points:
       common_ground:
         from: {point: UI1, interface: common}
         via: []
-        labels: [X8-002]
+        labels: [8-002A]
         to: {terminal: X8-002A}
 
       common_ground_to_terminal:
@@ -142,7 +162,7 @@ points:
       screen:
         from: {terminal: X0-001}
         via: []
-        labels: [SCR]
+        labels: [0-001]
         cable: {tag: CF-8-1, core: screen}
         to: {cut_back: true}     # new end: screen cut back and insulated at the device
 
@@ -172,12 +192,21 @@ points:
         via: [X8-003B]
         labels: [8-003B, 8-003B]
         to: {field_interface: signal}
+        cable: {tag: CF-8-2, core: 1-white}
 
       supply:
         from: {terminal: X3-002}
         via: [X8-003A]
         labels: [38-002, 8-003A]
         to: {field_interface: supply}
+        cable: {tag: CF-8-2, core: 1-black}
+      
+      screen:
+        from: {terminal: X0-002}
+        via: []
+        labels: [0-002]
+        cable: {tag: CF-8-2, core: screen}
+        to: {cut_back: true}     # new end: screen cut back and insulated at the device
 
   TT14-OAT:
     controller: SNC01
@@ -204,24 +233,35 @@ points:
         via: [X8-004B]
         labels: [8-004B, 8-004B]
         to: {field_interface: signal}
+        cable: {tag: CF-8-3, core: 1-black}
 
       supply:
         from: {terminal: X3-003}
         via: [X8-004A]
         labels: [38-003, 8-004A]
         to: {field_interface: supply}
+        cable: {tag: CF-8-3, core: 1-white}
+
+      screen:
+        from: {terminal: X0-003}
+        via: []
+        labels: [0-003]
+        cable: {tag: CF-8-3, core: screen}
+        to: {cut_back: true}     # new end: screen cut back and insulated at the device
 
       common_ground:
         from: {point: UI3, interface: common}
         via: []
-        labels: [X8-005]
+        labels: [8-005A]
         to: {terminal: X8-005A}
+        #cable: {tag: CF-8-3, core: 1-black}
 
       common_ground_mk2:
-        from: {terminal: X8-005B}
+        from: {terminal: X4-002}
         via: []
         labels: [48-002]
-        to: {terminal: X4-002}
+        to: {terminal: X8-005B}        
+        # cable: {tag: CF-8-3, core: 1-black}
 
 
   TT15-OAT:
@@ -249,12 +289,21 @@ points:
         via: [X8-007B]
         labels: [8-007B, 8-007B]
         to: {field_interface: signal}
+        cable: {tag: CF-8-4, core: 1-black}
 
       supply:
         from: {terminal: X3-004}
         via: [X8-007A]
         labels: [38-004, 8-007A]
         to: {field_interface: supply}
+        cable: {tag: CF-8-4, core: 1-white}
+
+      screen:
+        from: {terminal: X0-004}
+        via: []
+        labels: [0-004]
+        cable: {tag: CF-8-4, core: screen}
+        to: {cut_back: true}     # new end: screen cut back and insulated at the device
 
       # common_ground:
       #   from: {point: UI4, interface: common}
@@ -268,7 +317,7 @@ points:
       #   labels: [48-002]
       #   to: {terminal: X4-002}
 
-  PT01-SRP-OAT:
+  PT01-SRP:
     controller: SNC01
     equipment: AHU01
     description: Outside Air Temperature
@@ -277,7 +326,7 @@ points:
       point: UI5
 
     field_device:
-      label: PT01-SRP-OAT
+      label: PT01-SRP
       interfaces:
         signal:
           order: 1
@@ -297,25 +346,36 @@ points:
         from: {point: UI5, interface: signal}
         via: [X8-009B]
         labels: [8-009B, 8-009B]
+        cable: {tag: CF-8-5, core: 2-white}
         to: {field_interface: signal}
 
       supply:
-        from: {terminal: X3-008}
+        from: {terminal: X3-005}
         via: []
-        labels: [3-001A]
+        labels: [3-005]
+        cable: {tag: CF-8-5, core: 1-white}
         to: {field_interface: supply}
 
       signal_common:
         from: {point: UI5, interface: common}
         via: [X8-010B]
-        labels: [X8-010B,X8-010B]
+        labels: [8-010B, 8-010B]
+        cable: {tag: CF-8-5, core: 2-black}
         to: {field_interface: signal_common}
 
       common:
-        from: {terminal: X4-003}
+        from: {terminal: X4-005}
         via: []
-        labels: [X4-003]
+        labels: [4-005]
+        cable: {tag: CF-8-5, core: 1-black}
         to: {field_interface: common}
+
+      screen:
+        from: {terminal: X0-005}
+        via: []
+        labels: [0-005]
+        cable: {tag: CF-8-5, core: screen}
+        to: {cut_back: true}     # new end: screen cut back and insulated at the device
 
 
 
